@@ -1,0 +1,63 @@
+{
+  "name": "ai-mistake-book",
+  "version": "0.1.0",
+  "description": "AI 错题本：把扫描试卷整理成以知识点为索引的错题合集（DSH 插件）",
+  "type": "module",
+  "main": "index.js",
+  "license": "MIT",
+  "author": "suanmingxing <mica_ho133@163.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/suanmingxing/dsh-ai-mistake-book.git"
+  },
+  "homepage": "https://github.com/suanmingxing/dsh-ai-mistake-book#readme",
+  "bugs": {
+    "url": "https://github.com/suanmingxing/dsh-ai-mistake-book/issues"
+  },
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "mistake-book",
+    "错题本",
+    "education"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "lib/**/*.js",
+    "locale/*.json",
+    "icon.svg",
+    "VENDOR.md"
+  ],
+  "dependencies": {
+    "@deepseek-ai/cosmokit": "1.8.5",
+    "@deepseek-ai/schemastery": "3.18.4",
+    "katex": "0.16.47"
+  },
+  "icon": "./icon.svg",
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-connection"
+      ]
+    },
+    "manifestVersion": 1
+  }
+}

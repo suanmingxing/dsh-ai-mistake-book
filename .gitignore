@@ -1,0 +1,11 @@
+# 临时与系统文件
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 本地试装依赖时可能出现的空壳目录
+/vendor-formula/
+
+# 注意：node_modules/ 是**故意提交**的（见 VENDOR.md），不要忽略它。

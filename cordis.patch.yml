@@ -1,0 +1,6 @@
+# Install the AI 错题本 plugin row. Managed by `plugin_manager install_bundle` /
+# `dsh plugin add`; do not hand-mount it in the profile's own patch layer.
+- insert:
+    - id: ai-mistake-book
+      name: 'ai-mistake-book'
+      config: {}
