@@ -17,13 +17,19 @@
 
 ## 环境要求
 
-- **DSH（DeepSeek Harness）桌面版**，Web/桌面 profile 均可
+- **DSH（DeepSeek Harness）桌面版**，Web/桌面 profile 均可。要求 DSH `>= 0.2.1-rc.2`
 - 分析模型需要**支持图片输入**（插件启动前会校验，不支持会直接报错而不是静默失败）
 - Node.js ≥ 22（DSH 自带运行时已满足）
 
 ## 安装
 
-### 方式一：从 GitHub 一键安装（推荐）
+### 方式一：从 npm 安装（最快，推荐）
+
+```bash
+dsh plugin --profile desktop add ai-mistake-book
+```
+
+### 方式二：从 GitHub 安装
 
 ```bash
 dsh plugin --profile desktop add github:suanmingxing/dsh-ai-mistake-book
@@ -32,7 +38,7 @@ dsh plugin --profile desktop add github:suanmingxing/dsh-ai-mistake-book
 > 把 `desktop` 换成你实际使用的 profile（桌面版通常是 `desktop`，`dsh web` 用 `web`）。
 > 装完**重启 DeepSeek Harness** 生效。
 
-### 方式二：本地目录（开发/调试）
+### 方式三：本地目录（开发/调试）
 
 ```bash
 git clone https://github.com/suanmingxing/dsh-ai-mistake-book.git D:\tools\dsh-ai-mistake-book
