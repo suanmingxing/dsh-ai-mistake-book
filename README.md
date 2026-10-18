@@ -16,6 +16,22 @@
 - **会话可追溯**：待归档页可跳回分析会话继续修改
 - **Prompt 配置**：设置页按模型实际接收顺序单列展示分析任务书、背景、错因分类和 PDF 导出模板；PDF 模板支持新增自定义板块，模型按板块说明为每道错题产出内容
 
+> 更新记录见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 界面
+
+| 已归档 · 浏览（按知识点索引） | 已归档 · 管理（导出 / 删除 / 回收站） |
+|---|---|
+| ![已归档浏览](docs/screenshots/01-library-browse.png) | ![已归档管理](docs/screenshots/02-library-manage.png) |
+
+| 设置 · Prompt 配置与 PDF 模板 | 待归档（空状态） |
+|---|---|
+| ![设置页 Prompt 配置](docs/screenshots/03-settings-prompt-config.webp) | ![待归档](docs/screenshots/04-pending-empty.png) |
+
+- 「已归档 · 浏览」左栏是学科 → 一级知识点 → 二级知识点的索引树，右栏是卡片列表；点卡片可对照原卷裁剪图查看转录。
+- 「已归档 · 管理」里导出 PDF、管理导出文件、删除卡片（进回收站）与还原。
+- 「设置」里左侧是可收起的 Prompt 配置；PDF 模板是统一列表（预设板块 + 自定义板块），可拖动顺序、勾选包含、编辑说明，列表下方可新增自定义板块。
+
 ## 环境要求
 
 - **DSH（DeepSeek Harness）桌面版**，Web/桌面 profile 均可。要求 DSH `>= 0.2.1-rc.2`
@@ -54,7 +70,8 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
    ```
    或在插件页用模型工具 `mistake_ingest` 指定文件路径。
 4. **等分析**：分析在当前会话里进行；期间该会话的工具会被临时收窄到 4 个（读页面、提交候选、提交决定、问用户确认），结束后自动恢复。
-5. **确认归档**：插件页 →「待归档」核对候选 →「管理」里导出 PDF 或删除；正式归档需在插件页确认。
+5. **确认归档**：插件页 →「待归档」核对候选 → 确认归档；之后到「已归档 → 管理」导出 PDF 或删除。正式归档需在插件页确认。
+6. **定制版式与提词**（可选）：到「设置 → AI 错题本」的 Prompt 配置里改分析任务书、背景、错因分类；在 ⑤ PDF 导出模板里调整板块顺序、勾选或新增自定义板块。改完点「保存全部修改」，分析新试卷时生效。
 
 ## 数据与隐私
 
@@ -68,7 +85,7 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
 ├─ library/<学科>/<卷子>/cards/*.md   归档后的错题卡片
 ├─ templates/           可编辑的提示词（analysis / background / error-taxonomy / custom-templates.json）
 ├─ exports/             导出的 PDF
-├─ export-settings.json PDF 导出模板（板块顺序/勾选/原卷图）
+├─ export-settings.json PDF 导出模板（板块顺序/勾选/预设说明/原卷图）
 ├─ _trash/              回收站
 └─ index.md / index.json  自动生成的索引
 ```

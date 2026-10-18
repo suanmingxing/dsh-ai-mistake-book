@@ -39,6 +39,8 @@
     "lib",
     "locale",
     "icon.svg",
+    "docs",
+    "CHANGELOG.md",
     "VENDOR.md"
   ],
   "dependencies": {
