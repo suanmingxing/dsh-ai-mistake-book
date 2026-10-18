@@ -23,13 +23,9 @@
 
 ## 安装
 
-### 方式一：从 npm 安装（最快，推荐）
+> 目前只通过 GitHub 分发（npm 包尚未发布）。
 
-```bash
-dsh plugin --profile desktop add ai-mistake-book
-```
-
-### 方式二：从 GitHub 安装
+### 方式一：从 GitHub 安装（推荐）
 
 ```bash
 dsh plugin --profile desktop add github:suanmingxing/dsh-ai-mistake-book
@@ -38,7 +34,7 @@ dsh plugin --profile desktop add github:suanmingxing/dsh-ai-mistake-book
 > 把 `desktop` 换成你实际使用的 profile（桌面版通常是 `desktop`，`dsh web` 用 `web`）。
 > 装完**重启 DeepSeek Harness** 生效。
 
-### 方式三：本地目录（开发/调试）
+### 方式二：本地目录（开发/调试）
 
 ```bash
 git clone https://github.com/suanmingxing/dsh-ai-mistake-book.git D:\tools\dsh-ai-mistake-book
