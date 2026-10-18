@@ -11,9 +11,10 @@
 - **绝不编造**：读不准的内容写进"待人工确认"，交给人核对
 - **卡片即 Markdown**：`library/<学科>/<卷子>/cards/*.md`，带 front-matter，可手改、可 diff、可进版本库
 - **知识点索引**：自动重建 `index.md` / `index.json`，按 学科 → 一级 → 二级知识点 归类
-- **导出打印版 PDF**：每道错题的板块可勾选；**公式以 Word 原生公式（OMML）排版**，不是 Unicode 拼凑
+- **导出打印版 PDF**：每道错题的板块可勾选、可排序；**公式以 Word 原生公式（OMML）排版**，不是 Unicode 拼凑
 - **回收站**：删除先进 `_trash/`，可逐项还原，清空才真正销毁
 - **会话可追溯**：待归档页可跳回分析会话继续修改
+- **Prompt 配置**：设置页按模型实际接收顺序单列展示分析任务书、背景、错因分类和 PDF 导出模板；改默认 prompt 就是全部定制方式
 
 ## 环境要求
 
@@ -65,8 +66,9 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
 <archiveRoot>/
 ├─ inbox/<batchId>/     进行中的批次（原始扫描、光栅图）
 ├─ library/<学科>/<卷子>/cards/*.md   归档后的错题卡片
-├─ templates/           可编辑的提示词模板（analysis / background / error-taxonomy）
+├─ templates/           可编辑的提示词（analysis / background / error-taxonomy）
 ├─ exports/             导出的 PDF
+├─ export-settings.json PDF 导出模板（板块顺序/勾选/原卷图）
 ├─ _trash/              回收站
 └─ index.md / index.json  自动生成的索引
 ```
@@ -83,9 +85,22 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
 | `analysisProvider` / `analysisModel` | 空 | 空 = 用部署默认；必须支持图片 |
 | `deleteToTrash` | true | 删除进回收站而非销毁 |
 
-## 自定义提示词
+## 设置页：设置选项与 Prompt 配置
 
-设置页可编辑三份内置模板（`templates/`），也可以新增**自定义模板**：每条有标题、说明、正文，启用后自动并入分析任务书的「用户自定义要求」一节。
+设置页只有两块：
+
+- **设置选项**（置顶，只读）：当前生效的模型、光栅化、导出与存储参数；真正的修改入口在 DSH 的「设置 → 插件 → AI 错题本」。
+- **Prompt 配置**（单列，按模型实际接收顺序，全部默认展开）：
+
+  1. **分析任务书**（`templates/analysis.md`）——主体；`{{background}}` / `{{taxonomy}}` 是插入点
+  2. **难度与学段背景**（`templates/background.md`）——替换进分析任务书「三、难度标定背景」
+  3. **错因分类**（`templates/error-taxonomy.md`）——替换进「四、错因分类」
+  4. **系统自动追加**（只读折叠）——每批次固定追加的工具调用速记，不可编辑
+  5. **PDF 导出模板**——六个板块的显示顺序、勾选、是否附原卷图、是否按题裁剪
+
+定制就是直接改这些默认 prompt，没有独立的"自定义模板"层；旧版本的 `templates/custom.json` 会在首次加载时自动并入分析任务书，原文件改名为 `custom.json.migrated`。
+
+不会自动保存：改完点「保存全部修改」；每块的「恢复默认」只改草稿，仍需保存。PDF 导出时「管理」页还可以对这一次导出做临时覆盖。
 
 ## 依赖说明
 
@@ -97,7 +112,7 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
 
 - 公式排版覆盖错题卡常见写法（分数、根式、上下标、向量、`\left…\right`、希腊字母与常用运算符）；矩阵、分段函数等结构暂不支持，会退化为可读文本
 - 分析依赖模型的视觉能力；看不清的字段会进入"待人工确认"，不会猜测
-- 仅支持中文界面（`locale/` 目前只有 meta）
+- 界面文案提供中/英两份字典，提示词模板本身默认中文
 
 ## 许可证
 

@@ -60,21 +60,68 @@ window.__ModuleLoader__.load({
       exportHint: '生成一份可打印的错题集，含题干、作答、错因和原卷切片；公式以 Unicode 形式排版（不是 MathType）。文件写入归档根目录的 exports/。',
       optAnswers: '含作答与解法',
       optUncertain: '含待确认项',
-      exportDefaults: '导出 PDF 的默认板块',
-      exportDefaultsHint: '每道错题在 PDF 里包含哪些板块。「管理」页导出时还能临时改这一次的勾选。',
-      exportDefaultsSaved: '已保存导出默认板块',
       openSession: '打开分析会话',
-      customTemplates: '我的自定义模板',
-      customTemplatesHint: '这里新增的条目会按顺序并入分析任务书的「用户自定义要求」一节，下次分析自动生效；停用后不并入。',
-      customTemplatesEmpty: '还没有自定义模板。',
-      customTitle: '模板标题（如：保留分数线层级）',
-      customDescription: '说明（这条规则想解决什么；会一并写进提示词）',
-      customContent: '正文（Markdown，原样并入任务书）',
-      customEditing: '正在编辑已有模板',
-      editTemplate: '编辑',
       deleteTemplate: '删除',
-      customSaved: '已保存自定义模板',
-      customDeleted: '已删除该模板',
+      /* —— 设置页：只读的生效参数 + Prompt 配置 —— */
+      settingsOptions: '设置选项',
+      settingsOptionsHint: '以下为当前生效值；要修改请到 DSH 设置 → 插件 → AI 错题本。',
+      groupAnalysisModel: '分析模型',
+      groupRaster: '图像与光栅化',
+      groupExportArchive: '导出与归档',
+      groupStorage: '存储',
+      fieldAnalysisProvider: '分析服务商',
+      fieldAnalysisModel: '分析模型',
+      fieldPdfDpi: 'PDF 光栅化 DPI',
+      fieldOverviewDpi: '概览图 DPI',
+      fieldPagesPerRequest: '每次请求页数',
+      fieldMaxPagesPerBatch: '每批页数上限',
+      fieldMaxRecutsPerPage: '每页重切上限',
+      fieldFileNamePattern: '卡片文件名模式',
+      fieldKeepOriginalScan: '保留原始扫描件',
+      useDeploymentDefault: '使用部署默认',
+      yes: '是',
+      no: '否',
+      promptConfig: 'Prompt 配置',
+      promptConfigHint: '按模型实际接收的顺序排列；改动不会自动保存——改完点「保存全部修改」，「恢复默认」只改草稿。',
+      blockAnalysis: '① 分析任务书',
+      blockAnalysisHint: 'analysis.md：每次分析都会作为任务书整段下发给模型。',
+      blockBackground: '② 难度与学段背景',
+      blockBackgroundPlacement: '插入分析任务书 §三 {{background}}',
+      blockBackgroundHint: 'background.md：校准难度与知识点粒度的背景材料。',
+      blockTaxonomy: '③ 错因分类',
+      blockTaxonomyPlacement: '插入分析任务书 §四 {{taxonomy}}',
+      blockTaxonomyHint: 'error-taxonomy.md：模型从这里选错因，插件按名称归一化。',
+      blockSystem: '④ 系统自动追加',
+      blockSystemHint: '插件在任务书末尾自动追加的一段，只读；展开可查看原文与可用变量。',
+      blockPdf: '⑤ PDF 导出模板',
+      blockPdfHint: '每道错题在导出 PDF 里的板块与顺序；勾选控制包含，↑↓ 调整顺序。',
+      readOnly: '只读',
+      variables: '可用变量',
+      variablesHint: '在模板里用 {{变量名}} 引用；未识别的占位符会原样保留。',
+      varBatchId: '批次 ID',
+      varSubject: '学科',
+      varPages: '本批页数',
+      varPagesPerRequest: '每次请求页数',
+      varCells: '每条横带的重切分格数（9）',
+      varHint: '用户报的题号或提示',
+      varBackground: '难度与学段背景（取自 background.md）',
+      varTaxonomy: '错因分类（取自 error-taxonomy.md）',
+      saveAll: '保存全部修改',
+      discardChanges: '放弃修改',
+      unsavedChanges: '有未保存的修改',
+      savedAll: '已保存全部修改',
+      resetDefault: '恢复默认',
+      analysisEmptyNote: '分析任务书不能为空，填好内容后才能保存。',
+      migratedNote: '已把 {n} 条旧的自定义模板并入分析任务书。',
+      moveUp: '上移',
+      moveDown: '下移',
+      none: '（无）',
+      sectionStem: '题干',
+      sectionWork: '我的作答与过程',
+      sectionAnswer: '我标注的正确答案 / 解法',
+      sectionKnowledge: '知识点与技巧',
+      sectionErrorTypes: '错因',
+      sectionUncertain: '待人工确认',
       optSource: '含原卷图片',
       optCrop: '原卷只保留题目所在高度',
       exportedNote: '已导出 {n} 张卡片（{p} 份卷子）。',
@@ -98,7 +145,6 @@ window.__ModuleLoader__.load({
       introPending: '分析在你发出命令的那个会话里进行；分析期间该会话的工具会被临时收窄，结束或停止后自动恢复。',
       emptyLibrary: '档案还是空的。确认归档后卡片会出现在这里。',
       archiveRoot: '归档目录',
-      parameters: '参数',
       pages: '页',
       drafts: '草稿',
       candidates: '候选',
@@ -127,7 +173,6 @@ window.__ModuleLoader__.load({
       points: '个知识点',
       papers: '份卷子',
       template: '模板',
-      templateSaved: '模板已保存',
       failed: '读取失败',
       totals: '合计',
       reindex: '重建索引',
@@ -186,21 +231,67 @@ window.__ModuleLoader__.load({
       exportHint: 'Builds a printable mistake booklet with the stem, the answer, the error type and a crop of the original scan. Formulas are transliterated to Unicode, not typeset. Files go to exports/ under the archive root.',
       optAnswers: 'Include answers',
       optUncertain: 'Include to-confirm notes',
-      exportDefaults: 'Default PDF sections',
-      exportDefaultsHint: 'Which card sections each question shows in the PDF. The Manage tab can override them for a single export.',
-      exportDefaultsSaved: 'Default PDF sections saved',
       openSession: 'Open the analysis session',
-      customTemplates: 'My prompt templates',
-      customTemplatesHint: 'Entries are appended to the analysis brief under “用户自定义要求” and take effect on the next analysis; disabled entries are skipped.',
-      customTemplatesEmpty: 'No custom templates yet.',
-      customTitle: 'Title (e.g. keep fraction levels)',
-      customDescription: 'Description (what this rule is for; it is written into the prompt too)',
-      customContent: 'Body (Markdown, merged into the brief verbatim)',
-      customEditing: 'Editing an existing template',
-      editTemplate: 'Edit',
       deleteTemplate: 'Delete',
-      customSaved: 'Custom template saved',
-      customDeleted: 'Template deleted',
+      settingsOptions: 'Effective settings',
+      settingsOptionsHint: 'These values are currently in effect. To change them go to DSH Settings → Plugins → AI Mistake Book.',
+      groupAnalysisModel: 'Analysis model',
+      groupRaster: 'Imaging & rasterisation',
+      groupExportArchive: 'Export & archive',
+      groupStorage: 'Storage',
+      fieldAnalysisProvider: 'Analysis provider',
+      fieldAnalysisModel: 'Analysis model',
+      fieldPdfDpi: 'PDF rasterisation DPI',
+      fieldOverviewDpi: 'Overview DPI',
+      fieldPagesPerRequest: 'Pages per request',
+      fieldMaxPagesPerBatch: 'Max pages per batch',
+      fieldMaxRecutsPerPage: 'Max re-cuts per page',
+      fieldFileNamePattern: 'Card file-name pattern',
+      fieldKeepOriginalScan: 'Keep the original scan',
+      useDeploymentDefault: 'Deployment default',
+      yes: 'Yes',
+      no: 'No',
+      promptConfig: 'Prompt configuration',
+      promptConfigHint: 'Listed in the order the model receives them. Nothing is saved automatically: use “Save all changes”; “Restore default” only edits the draft.',
+      blockAnalysis: '1. Analysis brief',
+      blockAnalysisHint: 'analysis.md — sent as the task brief for every analysis. Edit freely.',
+      blockBackground: '2. Difficulty & grade background',
+      blockBackgroundPlacement: 'Inserted into the brief at §3 {{background}}',
+      blockBackgroundHint: 'background.md — calibration material for difficulty and knowledge-point granularity.',
+      blockTaxonomy: '3. Error taxonomy',
+      blockTaxonomyPlacement: 'Inserted into the brief at §4 {{taxonomy}}',
+      blockTaxonomyHint: 'error-taxonomy.md — the model picks error types from this list and normalises them.',
+      blockSystem: '4. Appended by the system',
+      blockSystemHint: 'Appended to the end of the brief by the plugin; read-only. Expand to see the text and the available variables.',
+      blockPdf: '5. PDF export template',
+      blockPdfHint: 'Sections and their order in the exported PDF; tick to include, ↑↓ to reorder.',
+      readOnly: 'Read-only',
+      variables: 'Available variables',
+      variablesHint: 'Reference them in a template as {{name}}; unknown placeholders stay visible.',
+      varBatchId: 'Batch id',
+      varSubject: 'Subject',
+      varPages: 'Page count of this batch',
+      varPagesPerRequest: 'Pages per request',
+      varCells: 'Re-cut cells per band (9)',
+      varHint: 'Reported question numbers / hint',
+      varBackground: 'Difficulty & grade background (from background.md)',
+      varTaxonomy: 'Error taxonomy (from error-taxonomy.md)',
+      saveAll: 'Save all changes',
+      discardChanges: 'Discard changes',
+      unsavedChanges: 'Unsaved changes',
+      savedAll: 'All changes saved',
+      resetDefault: 'Restore default',
+      analysisEmptyNote: 'The analysis brief cannot be empty — fill it in before saving.',
+      migratedNote: 'Merged {n} legacy custom template(s) into the analysis brief.',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      none: '(none)',
+      sectionStem: 'Stem',
+      sectionWork: 'My work',
+      sectionAnswer: 'The answer / method I marked',
+      sectionKnowledge: 'Knowledge points & skills',
+      sectionErrorTypes: 'Error types',
+      sectionUncertain: 'To confirm',
       optSource: 'Include the scan image',
       optCrop: 'Show only the question\'s height of the scan',
       exportedNote: 'Exported {n} card(s) from {p} paper(s).',
@@ -224,7 +315,6 @@ window.__ModuleLoader__.load({
       introPending: 'The analysis runs in the session that issued the command; that session\'s tools are narrowed while it runs and restored afterwards.',
       emptyLibrary: 'The archive is empty. Cards appear here once archived.',
       archiveRoot: 'Archive root',
-      parameters: 'Parameters',
       pages: 'pages',
       drafts: 'drafts',
       candidates: 'candidates',
@@ -253,7 +343,6 @@ window.__ModuleLoader__.load({
       points: 'knowledge points',
       papers: 'papers',
       template: 'Template',
-      templateSaved: 'Template saved',
       failed: 'Failed to load',
       totals: 'Totals',
       reindex: 'Rebuild index',
@@ -394,6 +483,26 @@ window.__ModuleLoader__.load({
         fontSize: '12px',
         fontWeight: '500',
       },
+      /* —— 设置页 —— */
+      /** 只读参数表的一行：左边标签、右边取值。 */
+      settingsRow: {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(150px, 220px) minmax(0, 1fr)',
+        gap: '8px',
+        alignItems: 'baseline',
+        padding: '4px 0',
+        borderTop: `1px solid ${token('--dsw-alias-border-l1')}`,
+      },
+      settingsKey: { fontSize: '12px', color: token('--dsw-alias-label-secondary') },
+      settingsValue: { fontSize: '12px', color: token('--dsw-alias-label-primary'), wordBreak: 'break-word' },
+      settingsGroup: { marginTop: '10px' },
+      settingsGroupTitle: { fontSize: '12px', fontWeight: 600, marginBottom: '2px' },
+      /** Prompt 配置里的一块：用顶端分隔线代替嵌套卡片，避免卡片套卡片。 */
+      block: { marginTop: '12px', paddingTop: '10px', borderTop: `1px solid ${token('--dsw-alias-border-l1')}` },
+      /** 等宽显示路径、文件名模式这类机器值。 */
+      mono: { fontFamily: 'ui-monospace, Consolas, monospace', wordBreak: 'break-all' },
+      /** 设置页顶部的保存栏：左说明、右按钮。 */
+      actionBar: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' },
     }
 
     const STATUS_LABEL = {
@@ -818,189 +927,511 @@ window.__ModuleLoader__.load({
       )
     }
 
+    /* ==========================================================================
+     * Settings — 两块独立卡片
+     *
+     * A.「设置选项」：只读，展示当前生效的参数；真正的修改入口在 DSH 的插件设置页。
+     * B.「Prompt 配置」：按模型实际接收顺序编辑三份模板，外加只读的系统追加和
+     *    PDF 导出板块。全部是草稿：只有点「保存全部修改」才写回，「恢复默认」
+     *    也只改草稿。
+     * ======================================================================== */
+
+    /** 三份可编辑模板；顺序即模型接收顺序（background / taxonomy 嵌进 analysis）。 */
+    const TEMPLATE_KEYS = ['analysis', 'background', 'errorTaxonomy']
+    const EMPTY_TEMPLATES = { analysis: '', background: '', errorTaxonomy: '' }
+    const EMPTY_EXPORT_SETTINGS = { sections: {}, order: [], includeSource: true, cropToQuestion: true }
+
+    /** 设置选项卡片的分组；`kind` 决定取值怎么显示。 */
+    const STATUS_GROUPS = [
+      {
+        title: 'groupAnalysisModel',
+        fields: [
+          ['analysisProvider', 'fieldAnalysisProvider', 'text-empty'],
+          ['analysisModel', 'fieldAnalysisModel', 'text-empty'],
+        ],
+      },
+      {
+        title: 'groupRaster',
+        fields: [
+          ['pdfDpi', 'fieldPdfDpi', 'plain'],
+          ['overviewDpi', 'fieldOverviewDpi', 'plain'],
+          ['pagesPerRequest', 'fieldPagesPerRequest', 'plain'],
+          ['maxPagesPerBatch', 'fieldMaxPagesPerBatch', 'plain'],
+          ['maxRecutsPerPage', 'fieldMaxRecutsPerPage', 'plain'],
+        ],
+      },
+      {
+        title: 'groupExportArchive',
+        fields: [
+          ['fileNamePattern', 'fieldFileNamePattern', 'plain'],
+          ['keepOriginalScan', 'fieldKeepOriginalScan', 'flag'],
+        ],
+      },
+      {
+        title: 'groupStorage',
+        fields: [['archiveRoot', 'archiveRoot', 'mono']],
+      },
+    ]
+
+    /** 分析任务书可用的占位符，系统追加一节里以表格展示。 */
+    const TEMPLATE_VARIABLES = [
+      ['{{batchId}}', 'varBatchId'],
+      ['{{subject}}', 'varSubject'],
+      ['{{pages}}', 'varPages'],
+      ['{{pagesPerRequest}}', 'varPagesPerRequest'],
+      ['{{cells}}', 'varCells'],
+      ['{{hint}}', 'varHint'],
+      ['{{background}}', 'varBackground'],
+      ['{{taxonomy}}', 'varTaxonomy'],
+    ]
+
+    /** 导出板块 key → 字典键；服务端的 label 是中文，英文界面按 key 取译文。 */
+    const SECTION_LABEL_KEYS = {
+      stem: 'sectionStem',
+      work: 'sectionWork',
+      answer: 'sectionAnswer',
+      knowledge: 'sectionKnowledge',
+      errorTypes: 'sectionErrorTypes',
+      uncertain: 'sectionUncertain',
+    }
+
+    const asText = (value) => (typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value))
+
+    const cloneExportSettings = (settings) => ({
+      sections: { ...(settings?.sections ?? {}) },
+      order: [...(settings?.order ?? [])],
+      includeSource: settings?.includeSource !== false,
+      cropToQuestion: settings?.cropToQuestion !== false,
+    })
+
+    function sameExportSettings(left, right) {
+      if (left === null || right === null) return false
+      if (left.includeSource !== right.includeSource || left.cropToQuestion !== right.cropToQuestion) return false
+      if (left.order.length !== right.order.length) return false
+      return left.order.every((key, index) => key === right.order[index] && (left.sections[key] !== false) === (right.sections[key] !== false))
+    }
+
+    /** 迁移回执（{count} / 数字 / null）统一成数字；非空但形状未知时至少提示一次。 */
+    function migratedCountOf(migrated) {
+      if (migrated === null || migrated === undefined) return 0
+      if (typeof migrated === 'number') return Number.isFinite(migrated) ? migrated : 0
+      if (typeof migrated === 'object' && typeof migrated.count === 'number' && Number.isFinite(migrated.count)) return migrated.count
+      return 1
+    }
+
+    /** 收敛 api('templates') 的响应；缺字段时退回 defaults，避免出现 undefined。 */
+    function normalizeTemplatesPayload(value) {
+      const templates = value?.templates ?? {}
+      const defaults = value?.defaults ?? {}
+      const content = (key) => (typeof templates[key] === 'string'
+        ? templates[key]
+        : (typeof defaults[key] === 'string' ? defaults[key] : ''))
+      const defaultOf = (key) => (typeof defaults[key] === 'string' ? defaults[key] : '')
+      return {
+        templates: { analysis: content('analysis'), background: content('background'), errorTaxonomy: content('errorTaxonomy') },
+        defaults: { analysis: defaultOf('analysis'), background: defaultOf('background'), errorTaxonomy: defaultOf('errorTaxonomy') },
+        dir: asText(value?.dir),
+        systemSuffix: asText(value?.systemSuffix),
+        migratedCount: migratedCountOf(value?.migrated),
+      }
+    }
+
+    /** 收敛 api('exportSettings') 的响应：已知板块去重、缺失的按服务端顺序补齐。 */
+    function normalizeExportPayload(value) {
+      const settings = value?.settings ?? {}
+      const list = Array.isArray(value?.sections)
+        ? value.sections.filter((section) => section !== null && typeof section === 'object' && typeof section.key === 'string' && section.key !== '')
+        : []
+      const known = list.length > 0
+        ? list.map((section) => section.key)
+        : (Array.isArray(settings.order) ? settings.order.filter((key) => typeof key === 'string' && key !== '') : [])
+      const normalizeSettings = (raw) => {
+        const order = []
+        const remember = (key) => { if (known.includes(key) && !order.includes(key)) order.push(key) }
+        if (Array.isArray(raw?.order)) raw.order.forEach(remember)
+        known.forEach(remember)
+        const sections = {}
+        for (const key of order) {
+          const value = raw?.sections !== null && typeof raw?.sections === 'object' ? raw.sections[key] : undefined
+          sections[key] = value === undefined ? true : value !== false
+        }
+        return {
+          sections,
+          order,
+          includeSource: raw?.includeSource !== false,
+          cropToQuestion: raw?.cropToQuestion !== false,
+        }
+      }
+      return {
+        list,
+        settings: normalizeSettings(settings),
+        // 内置默认值由服务端下发；旧宿主没有该字段时返回 null，重置按钮退回当前顺序。
+        defaults: value?.defaults !== null && typeof value?.defaults === 'object' ? normalizeSettings(value.defaults) : null,
+      }
+    }
+
+    /**
+     * 一块可编辑模板。
+     *
+     * 头上是「插入位置」说明和只改草稿的「恢复默认」：background / error-taxonomy
+     * 不是独立下发的，而是被替换进分析任务书的对应小节，所以位置提示很关键。
+     */
+    function PromptBlock(props) {
+      const { t, titleKey, placementKey, hintKey, value, minHeight, hasDefault, onChange, onReset } = props
+      return h('div', { style: styles.block },
+        h('div', { style: styles.row },
+          h('div', null,
+            h('div', { style: { fontWeight: 600 } }, t(titleKey)),
+            placementKey === undefined ? null : h('div', { style: styles.small }, t(placementKey)),
+          ),
+          h('button', {
+            style: styles.button,
+            onClick: onReset,
+            disabled: hasDefault !== true,
+            title: t('resetDefault'),
+          }, t('resetDefault')),
+        ),
+        hintKey === undefined ? null : h('div', { style: { ...styles.small, marginTop: '4px' } }, t(hintKey)),
+        h('textarea', {
+          style: { ...styles.textarea, minHeight, marginTop: '8px' },
+          value,
+          onChange: (event) => onChange(event.target.value),
+        }),
+      )
+    }
+
     function SettingsTab(props) {
       const { t } = props
-      const [state, setState] = React.useState({ loading: true, error: null, status: null, templates: null, dir: '', key: 'analysis', text: '', note: null, exportSettings: null, exportSections: [], custom: [] })
-      const [customDraft, setCustomDraft] = React.useState({ id: null, title: '', description: '', content: '', enabled: true })
+      const [state, setState] = React.useState({
+        loading: true,
+        loaded: false,
+        error: null,
+        note: null,
+        saving: false,
+        status: null,
+        statusBusy: false,
+        statusNote: null,
+        dir: '',
+        systemSuffix: '',
+        systemOpen: false,
+        migratedCount: 0,
+        serverTemplates: EMPTY_TEMPLATES,
+        defaults: EMPTY_TEMPLATES,
+        draft: EMPTY_TEMPLATES,
+        exportList: [],
+        savedExport: null,
+        exportDefaults: null,
+        exportSettings: EMPTY_EXPORT_SETTINGS,
+      })
 
-      const load = React.useCallback(() => {
+      const load = React.useCallback((successNote) => {
         setState((current) => ({ ...current, loading: true, error: null }))
         Promise.all([api('status'), api('templates'), api('exportSettings', {})])
-          .then(([status, templates, exportSettings]) => setState((current) => ({
-            ...current,
-            loading: false,
-            status,
-            templates: templates.templates,
-            dir: templates.dir,
-            text: templates.templates[current.key] ?? templates.templates.analysis ?? '',
-            exportSettings: exportSettings.settings,
-            exportSections: Array.isArray(exportSettings.sections) ? exportSettings.sections : [],
-            custom: Array.isArray(templates.custom) ? templates.custom : [],
-          })))
-          .catch((error) => setState((current) => ({ ...current, loading: false, error: error.message })))
+          .then(([status, templatesValue, exportValue]) => {
+            const parsed = normalizeTemplatesPayload(templatesValue)
+            const parsedExport = normalizeExportPayload(exportValue)
+            setState((current) => ({
+              ...current,
+              loading: false,
+              loaded: true,
+              error: null,
+              status,
+              statusNote: null,
+              dir: parsed.dir,
+              systemSuffix: parsed.systemSuffix,
+              migratedCount: parsed.migratedCount,
+              serverTemplates: parsed.templates,
+              defaults: parsed.defaults,
+              draft: { ...parsed.templates },
+              exportList: parsedExport.list,
+              exportDefaults: parsedExport.defaults,
+              savedExport: cloneExportSettings(parsedExport.settings),
+              exportSettings: cloneExportSettings(parsedExport.settings),
+              saving: false,
+              note: successNote === undefined ? null : { kind: 'ok', text: successNote },
+            }))
+          })
+          .catch((error) => setState((current) => ({ ...current, loading: false, saving: false, error: error.message })))
       }, [])
 
-      React.useEffect(load, [load])
+      React.useEffect(() => { load() }, [load])
 
-      const save = () => {
-        api('templateSave', { key: state.key, content: state.text })
-          .then(() => setState((current) => ({ ...current, note: t('templateSaved') })))
-          .catch((error) => setState((current) => ({ ...current, note: error.message })))
+      const draftDirty = TEMPLATE_KEYS.some((key) => state.draft[key] !== state.serverTemplates[key])
+        || !sameExportSettings(state.exportSettings, state.savedExport)
+      const dirty = state.loaded && draftDirty
+      const analysisEmpty = state.draft.analysis.trim() === ''
+      const canSave = dirty && !analysisEmpty && !state.saving
+
+      const saveAll = () => {
+        if (!canSave) return
+        setState((current) => ({ ...current, saving: true, note: null }))
+        Promise.all([
+          api('templateSaveAll', {
+            analysis: state.draft.analysis,
+            background: state.draft.background,
+            errorTaxonomy: state.draft.errorTaxonomy,
+          }),
+          api('exportSettingsSave', cloneExportSettings(state.exportSettings)),
+        ])
+          .then(() => load(t('savedAll')))
+          .catch((error) => setState((current) => ({ ...current, saving: false, note: { kind: 'error', text: error.message } })))
       }
 
-      const pick = (key) => setState((current) => ({ ...current, key, text: (current.templates ?? {})[key] ?? '', note: null }))
+      const discard = () => setState((current) => ({
+        ...current,
+        draft: { ...current.serverTemplates },
+        exportSettings: cloneExportSettings(current.savedExport),
+        note: null,
+        saving: false,
+      }))
 
-      const toggleDefaultSection = (key) => setState((current) => {
-        const settings = current.exportSettings ?? { sections: {}, includeSource: true, cropToQuestion: true }
-        return {
-          ...current,
-          note: null,
-          exportSettings: { ...settings, sections: { ...settings.sections, [key]: settings.sections[key] === false } },
+      const resetTemplate = (key) => setState((current) => {
+        const value = current.defaults[key]
+        if (typeof value !== 'string') return current
+        return { ...current, draft: { ...current.draft, [key]: value }, note: null }
+      })
+
+      /** PDF 模板「恢复默认」：用服务端下发的内置默认（旧宿主没有时退回全开+当前顺序）。 */
+      const resetExport = () => setState((current) => {
+        const fallbackOrder = current.exportList.map((section) => section.key)
+        const defaults = current.exportDefaults ?? {
+          sections: Object.fromEntries(fallbackOrder.map((key) => [key, true])),
+          order: fallbackOrder,
+          includeSource: true,
+          cropToQuestion: true,
         }
+        return { ...current, note: null, exportSettings: cloneExportSettings(defaults) }
       })
 
-      const saveExportSettings = () => {
-        const settings = state.exportSettings ?? { sections: {}, includeSource: true, cropToQuestion: true }
-        api('exportSettingsSave', settings)
-          .then((value) => setState((current) => ({ ...current, exportSettings: value.settings, note: t('exportDefaultsSaved') })))
-          .catch((error) => setState((current) => ({ ...current, note: error.message })))
-      }
+      const editDraft = (key) => (value) => setState((current) => ({
+        ...current,
+        note: null,
+        draft: { ...current.draft, [key]: value },
+      }))
 
-      /* —— 用户自定义模板 —— */
+      const toggleExportSection = (key) => setState((current) => ({
+        ...current,
+        note: null,
+        exportSettings: {
+          ...current.exportSettings,
+          sections: { ...current.exportSettings.sections, [key]: current.exportSettings.sections[key] === false },
+        },
+      }))
 
-      const resetCustomDraft = () => setCustomDraft({ id: null, title: '', description: '', content: '', enabled: true })
-
-      const startCustomEdit = (item) => setCustomDraft({
-        id: item.id,
-        title: item.title,
-        description: item.description,
-        content: item.content,
-        enabled: item.enabled !== false,
+      const moveExportSection = (key, offset) => setState((current) => {
+        const order = [...current.exportSettings.order]
+        const index = order.indexOf(key)
+        const target = index + offset
+        if (index < 0 || target < 0 || target >= order.length) return current
+        order.splice(index, 1)
+        order.splice(target, 0, key)
+        return { ...current, note: null, exportSettings: { ...current.exportSettings, order } }
       })
 
-      const saveCustom = () => {
-        api('customTemplateSave', customDraft)
-          .then((value) => {
-            setState((current) => ({ ...current, custom: value.items, note: t('customSaved') }))
-            resetCustomDraft()
-          })
-          .catch((error) => setState((current) => ({ ...current, note: error.message })))
+      const toggleExportOption = (key) => setState((current) => ({
+        ...current,
+        note: null,
+        exportSettings: { ...current.exportSettings, [key]: !current.exportSettings[key] },
+      }))
+
+      const refreshStatus = () => {
+        setState((current) => ({ ...current, statusBusy: true, statusNote: null }))
+        api('status')
+          .then((status) => setState((current) => ({ ...current, status, statusBusy: false })))
+          .catch((error) => setState((current) => ({ ...current, statusBusy: false, statusNote: { kind: 'error', text: error.message } })))
       }
 
-      const removeCustom = (item) => {
-        api('customTemplateDelete', { id: item.id })
-          .then((value) => {
-            setState((current) => ({ ...current, custom: value.items, note: t('customDeleted') }))
-            if (customDraft.id === item.id) resetCustomDraft()
-          })
-          .catch((error) => setState((current) => ({ ...current, note: error.message })))
+      if (!state.loaded) {
+        return h('div', { style: styles.root },
+          state.error === null
+            ? h('div', { style: { ...styles.card, ...styles.muted } }, t('loading'))
+            : h('div', { style: { ...styles.card, ...styles.error } },
+              `${t('failed')}: ${state.error}`,
+              h('div', { style: { marginTop: '8px' } },
+                h('button', { style: styles.button, onClick: () => load() }, t('refresh')))),
+        )
       }
 
-      const toggleCustomEnabled = (item) => {
-        api('customTemplateSave', { ...item, enabled: item.enabled === false })
-          .then((value) => setState((current) => ({ ...current, custom: value.items })))
-          .catch((error) => setState((current) => ({ ...current, note: error.message })))
+      /** 取值显示：布尔转是/否，模型字段留空时说明走部署默认。 */
+      const statusValue = (kind, value) => {
+        if (kind === 'flag') return value === true ? t('yes') : value === false ? t('no') : asText(value)
+        if (kind === 'text-empty') return asText(value).trim() === '' ? t('useDeploymentDefault') : asText(value)
+        return asText(value)
       }
 
-      return h('div', { style: styles.root },
-        state.error === null ? null : h('div', { style: { ...styles.card, ...styles.error } }, state.error),
-        state.status === null ? null : h('div', { style: styles.card },
-          h('div', { style: styles.label }, t('parameters')),
-          h('pre', { style: styles.pre }, Object.entries(state.status).map(([key, value]) => `${key}: ${value}`).join('\n')),
+      const statusCard = h('div', { style: styles.card },
+        h('div', { style: styles.row },
+          h('div', null,
+            h('div', { style: { fontWeight: 600 } }, t('settingsOptions')),
+            h('div', { style: { ...styles.small, marginTop: '2px' } }, t('settingsOptionsHint')),
+          ),
+          h('button', { style: styles.button, onClick: refreshStatus, disabled: state.statusBusy }, state.statusBusy ? t('working') : t('refresh')),
         ),
-        state.exportSections.length === 0 ? null : h('div', { style: styles.card },
-          h('div', { style: styles.label }, t('exportDefaults')),
-          h('div', { style: styles.small }, t('exportDefaultsHint')),
-          h('div', { style: { ...styles.wrap, marginTop: '8px' } },
-            state.exportSections.map((section) => h('label', {
-              key: section.key,
-              style: { display: 'inline-flex', alignItems: 'center', gap: '6px', marginRight: '12px' },
-            },
+        state.statusNote === null ? null : h('div', { style: { ...styles.small, marginTop: '6px', ...(state.statusNote.kind === 'ok' ? styles.ok : styles.error) } }, state.statusNote.text),
+        state.status === null
+          ? h('div', { style: { ...styles.muted, marginTop: '8px' } }, state.loading ? t('loading') : t('failed'))
+          : h('div', { style: { marginTop: '8px' } },
+              STATUS_GROUPS.map((group) => h('div', { key: group.title, style: styles.settingsGroup },
+                h('div', { style: styles.settingsGroupTitle }, t(group.title)),
+                group.fields.map(([field, labelKey, kind]) => {
+                  const raw = state.status[field]
+                  const missing = kind === 'text-empty' && asText(raw).trim() === ''
+                  return h('div', { key: field, style: styles.settingsRow },
+                    h('div', { style: styles.settingsKey }, t(labelKey)),
+                    h('div', { style: { ...styles.settingsValue, ...(kind === 'mono' ? styles.mono : {}), ...(missing ? styles.muted : {}) } },
+                      statusValue(kind, raw)),
+                  )
+                }),
+              )),
+            ),
+      )
+
+      const metaByKey = new Map(state.exportList.map((section) => [section.key, section]))
+      const sectionLabel = (key) => {
+        const meta = metaByKey.get(key)
+        const localeKey = SECTION_LABEL_KEYS[key]
+        if (localeKey !== undefined) return t(localeKey)
+        return meta === undefined || asText(meta.label) === '' ? key : meta.label
+      }
+
+      const systemBlock = h('div', { style: styles.block },
+        h('div', { style: styles.row },
+          h('div', null,
+            h('div', { style: { fontWeight: 600 } }, t('blockSystem')),
+            h('div', { style: { ...styles.small, marginTop: '2px' } }, t('blockSystemHint')),
+          ),
+          h('div', { style: styles.wrap },
+            h('span', { style: styles.chip }, t('readOnly')),
+            h('button', {
+              style: styles.button,
+              onClick: () => setState((current) => ({ ...current, systemOpen: !current.systemOpen })),
+            }, state.systemOpen ? t('collapse') : t('expand')),
+          ),
+        ),
+        state.systemOpen ? h('div', null,
+          h('div', { style: { ...styles.card, marginTop: '8px', background: token('--dsw-alias-bg-layer-2') } },
+            h('pre', { style: styles.pre }, state.systemSuffix === '' ? t('none') : state.systemSuffix)),
+          h('div', { style: { ...styles.small, fontWeight: 600, marginTop: '10px' } }, t('variables')),
+          h('div', { style: styles.small }, t('variablesHint')),
+          h('div', { style: { marginTop: '2px' } },
+            TEMPLATE_VARIABLES.map(([name, labelKey]) => h('div', { key: name, style: styles.settingsRow },
+              h('div', { style: { ...styles.settingsKey, ...styles.mono } }, name),
+              h('div', { style: styles.settingsValue }, t(labelKey)),
+            )),
+          ),
+        ) : null,
+      )
+
+      const pdfBlock = h('div', { style: styles.block },
+        h('div', { style: styles.row },
+          h('div', null,
+            h('div', { style: { fontWeight: 600 } }, t('blockPdf')),
+            h('div', { style: { ...styles.small, marginTop: '2px' } }, t('blockPdfHint')),
+          ),
+          h('button', { style: styles.button, onClick: resetExport }, t('resetDefault')),
+        ),
+        h('div', { style: { marginTop: '6px' } },
+          state.exportSettings.order.map((key, index) => h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+            h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+              h('input', {
+                type: 'checkbox',
+                checked: state.exportSettings.sections[key] !== false,
+                onChange: () => toggleExportSection(key),
+              }),
+              h('span', { style: styles.settingsValue }, sectionLabel(key)),
+            ),
+            h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
+              h('button', {
+                style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
+                title: t('moveUp'),
+                onClick: () => moveExportSection(key, -1),
+                disabled: index === 0,
+              }, '↑'),
+              h('button', {
+                style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
+                title: t('moveDown'),
+                onClick: () => moveExportSection(key, 1),
+                disabled: index === state.exportSettings.order.length - 1,
+              }, '↓'),
+            ),
+          )),
+        ),
+        h('div', { style: { ...styles.wrap, marginTop: '8px' } },
+          h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
             h('input', {
               type: 'checkbox',
-              checked: (state.exportSettings?.sections?.[section.key] ?? true) !== false,
-              onChange: () => toggleDefaultSection(section.key),
+              checked: state.exportSettings.includeSource,
+              onChange: () => toggleExportOption('includeSource'),
             }),
-            ` ${section.label}`)),
-          ),
-          h('div', { style: { ...styles.wrap, marginTop: '8px' } },
-            h('button', { style: styles.primary, onClick: saveExportSettings }, t('save')),
-            state.note === null ? null : h('span', { style: styles.ok }, state.note),
-          ),
+            ` ${t('optSource')}`),
+          h('label', {
+            style: { display: 'inline-flex', alignItems: 'center', gap: '6px', ...(state.exportSettings.includeSource ? {} : styles.muted) },
+          },
+          h('input', {
+            type: 'checkbox',
+            checked: state.exportSettings.cropToQuestion,
+            disabled: !state.exportSettings.includeSource,
+            onChange: () => toggleExportOption('cropToQuestion'),
+          }),
+          ` ${t('optCrop')}`),
         ),
+      )
+
+      return h('div', { style: styles.root },
+        state.error === null ? null : h('div', { style: { ...styles.card, ...styles.error } }, `${t('failed')}: ${state.error}`),
+        state.loading ? h('div', { style: styles.small }, t('loading')) : null,
+        statusCard,
         h('div', { style: styles.card },
-          h('div', { style: styles.label }, t('customTemplates')),
-          h('div', { style: styles.small }, t('customTemplatesHint')),
-          state.custom.length === 0
-            ? h('div', { style: { ...styles.muted, marginTop: '6px' } }, t('customTemplatesEmpty'))
-            : h('div', { style: { marginTop: '6px' } }, state.custom.map((item) => h('div', {
-                key: item.id,
-                style: { ...styles.row, alignItems: 'flex-start', marginTop: '6px' },
-              },
-              h('div', { style: { minWidth: '0', flex: '1 1 auto' } },
-                h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
-                  h('input', { type: 'checkbox', checked: item.enabled !== false, onChange: () => toggleCustomEnabled(item) }),
-                  h('span', { style: { fontWeight: 600 } }, item.title),
-                ),
-                item.description === '' ? null : h('div', { style: styles.small }, item.description),
-                item.content.trim() === '' ? null : h('div', { style: styles.muted }, item.content.split('\n')[0].slice(0, 80)),
-              ),
-              h('div', { style: styles.wrap },
-                h('button', { style: styles.button, onClick: () => startCustomEdit(item) }, t('editTemplate')),
-                h('button', { style: { ...styles.button, ...styles.danger }, onClick: () => removeCustom(item) }, t('deleteTemplate')),
-              ),
-            ))),
-          h('div', { style: { marginTop: '10px' } },
-            h('input', {
-              style: styles.input,
-              placeholder: t('customTitle'),
-              value: customDraft.title,
-              onChange: (event) => setCustomDraft((current) => ({ ...current, title: event.target.value })),
-            }),
-            h('input', {
-              style: { ...styles.input, marginTop: '6px' },
-              placeholder: t('customDescription'),
-              value: customDraft.description,
-              onChange: (event) => setCustomDraft((current) => ({ ...current, description: event.target.value })),
-            }),
-            h('textarea', {
-              style: { ...styles.textarea, minHeight: '150px', marginTop: '6px' },
-              placeholder: t('customContent'),
-              value: customDraft.content,
-              onChange: (event) => setCustomDraft((current) => ({ ...current, content: event.target.value })),
-            }),
-            h('div', { style: { ...styles.wrap, marginTop: '8px' } },
-              h('button', { style: styles.primary, onClick: saveCustom, disabled: customDraft.title.trim() === '' }, t('save')),
-              customDraft.id === null ? null : h('button', { style: styles.button, onClick: resetCustomDraft }, t('cancel')),
-              customDraft.id === null ? null : h('span', { style: styles.small }, t('customEditing')),
-              state.note === null ? null : h('span', { style: styles.ok }, state.note),
+          h('div', { style: { ...styles.actionBar, marginBottom: '4px' } },
+            h('div', null,
+              h('div', { style: { fontWeight: 600 } }, t('promptConfig')),
+              h('div', { style: { ...styles.small, marginTop: '2px' } }, t('promptConfigHint')),
+              state.dir === '' ? null : h('div', { style: styles.small }, `${t('template')}: ${state.dir}`),
+            ),
+            h('div', { style: styles.wrap },
+              dirty ? h('span', { style: { ...styles.chip, ...styles.warn } }, t('unsavedChanges')) : null,
+              h('button', { style: styles.primary, onClick: saveAll, disabled: !canSave }, state.saving ? t('working') : t('saveAll')),
+              h('button', { style: styles.button, onClick: discard, disabled: !dirty || state.saving }, t('discardChanges')),
             ),
           ),
+          state.note === null ? null : h('div', { style: { ...styles.small, marginTop: '6px', ...(state.note.kind === 'ok' ? styles.ok : styles.error) } }, state.note.text),
+          state.migratedCount > 0 ? h('div', { style: { ...styles.small, marginTop: '6px', ...styles.warn } }, t('migratedNote').replace('{n}', String(state.migratedCount))) : null,
+          analysisEmpty ? h('div', { style: { ...styles.small, marginTop: '6px', ...styles.warn } }, t('analysisEmptyNote')) : null,
+          h(PromptBlock, {
+            t,
+            titleKey: 'blockAnalysis',
+            hintKey: 'blockAnalysisHint',
+            value: state.draft.analysis,
+            minHeight: '320px',
+            hasDefault: typeof state.defaults.analysis === 'string' && state.defaults.analysis !== '',
+            onChange: editDraft('analysis'),
+            onReset: () => resetTemplate('analysis'),
+          }),
+          h(PromptBlock, {
+            t,
+            titleKey: 'blockBackground',
+            placementKey: 'blockBackgroundPlacement',
+            hintKey: 'blockBackgroundHint',
+            value: state.draft.background,
+            minHeight: '200px',
+            hasDefault: typeof state.defaults.background === 'string' && state.defaults.background !== '',
+            onChange: editDraft('background'),
+            onReset: () => resetTemplate('background'),
+          }),
+          h(PromptBlock, {
+            t,
+            titleKey: 'blockTaxonomy',
+            placementKey: 'blockTaxonomyPlacement',
+            hintKey: 'blockTaxonomyHint',
+            value: state.draft.errorTaxonomy,
+            minHeight: '170px',
+            hasDefault: typeof state.defaults.errorTaxonomy === 'string' && state.defaults.errorTaxonomy !== '',
+            onChange: editDraft('errorTaxonomy'),
+            onReset: () => resetTemplate('errorTaxonomy'),
+          }),
+          systemBlock,
+          pdfBlock,
         ),
-        state.templates === null
-          ? h('div', { style: { ...styles.card, ...styles.muted } }, t('loading'))
-          : h('div', { style: styles.card },
-              h('div', { style: styles.label }, `${t('template')}　${state.dir}`),
-              h('div', { style: styles.wrap },
-                // 防御旧宿主：旧版接口会把自定义模板数组混进 templates，多出一个
-                // 名叫 custom 的按钮，点它保存必然报「未知模板」。新版宿主已把
-                // custom 拆出去，这里再滤一次，热载后即使宿主没重启也不显示坏按钮。
-                Object.keys(state.templates).filter((key) => key !== 'custom').map((key) => h('button', {
-                  key,
-                  style: { ...styles.button, ...(key === state.key ? styles.active : {}) },
-                  onClick: () => pick(key),
-                }, key)),
-              ),
-              h('textarea', {
-                style: { ...styles.textarea, minHeight: '320px', marginTop: '10px' },
-                value: state.text,
-                onChange: (event) => setState((current) => ({ ...current, text: event.target.value })),
-              }),
-              h('div', { style: { ...styles.wrap, marginTop: '8px' } },
-                h('button', { style: styles.primary, onClick: save }, t('save')),
-                state.note === null ? null : h('span', { style: styles.ok }, state.note),
-              ),
-            ),
       )
     }
 

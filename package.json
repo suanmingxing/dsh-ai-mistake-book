@@ -1,6 +1,6 @@
 {
   "name": "ai-mistake-book",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI 错题本：把扫描试卷整理成以知识点为索引的错题合集（DSH 插件）",
   "type": "module",
   "main": "index.js",
