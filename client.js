@@ -982,7 +982,10 @@ window.__ModuleLoader__.load({
           : h('div', { style: styles.card },
               h('div', { style: styles.label }, `${t('template')}　${state.dir}`),
               h('div', { style: styles.wrap },
-                Object.keys(state.templates).map((key) => h('button', {
+                // 防御旧宿主：旧版接口会把自定义模板数组混进 templates，多出一个
+                // 名叫 custom 的按钮，点它保存必然报「未知模板」。新版宿主已把
+                // custom 拆出去，这里再滤一次，热载后即使宿主没重启也不显示坏按钮。
+                Object.keys(state.templates).filter((key) => key !== 'custom').map((key) => h('button', {
                   key,
                   style: { ...styles.button, ...(key === state.key ? styles.active : {}) },
                   onClick: () => pick(key),

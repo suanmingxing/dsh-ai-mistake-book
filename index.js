@@ -1,10 +1,11 @@
 /**
  * AI 错题本 — host half.
  *
- * `/mistake` (or the `mistake_ingest` tool) turns an attached scan into:
- *   a batch under <archiveRoot>/inbox/<batchId>, and
- *   a new analysis session attached to the <archiveRoot> workspace.
- * The session reads the pages through `mistake_pages`, so nothing is ever parsed
+ * `/mistake` (or the `mistake_ingest` tool) turns an attached scan into a batch
+ * under <archiveRoot>/inbox/<batchId>, then turns the calling session into the
+ * analysis run: its tools are narrowed to the plugin's own set, and a task brief
+ * is queued (command) or handed back in the tool result (`mistake_ingest`).
+ * The model reads the pages through `mistake_pages`, so nothing is ever parsed
  * from a raw file path by the model itself.
  */
 import { Config, liveConfig } from './lib/config.js'
@@ -32,7 +33,7 @@ export const inject = [
 export { Config }
 
 export function apply(ctx, config) {
-  const state = { lastDelivery: null, analysisSessions: new Map(), toolRestrictions: new Map() }
+  const state = { analysisSessions: new Map(), toolRestrictions: new Map() }
   const readConfig = () => liveConfig(ctx, config)
   const trackSession = (sessionId, batchId) => state.analysisSessions.set(sessionId, batchId)
   const trackRestriction = (sessionId, dispose) => state.toolRestrictions.set(sessionId, dispose)
@@ -64,9 +65,18 @@ export function apply(ctx, config) {
     if (batchId === undefined) return
     reconcileBatch(archivePaths(readConfig().archiveRoot), batchId)
       .then((status) => {
-        if (status === 'awaiting-confirmation' || status === 'analysis-ended' || status === 'archived') liftRestriction(session.id)
+        // Settled states hand the session its normal tools back. `staged` is not
+        // settled on purpose: the model still needs `mistake_select` to finish the
+        // decision, and every tool it needs is inside the allowlist.
+        if (status === 'awaiting-confirmation' || status === 'analysis-ended' || status === 'archived' || status === 'cancelled') liftRestriction(session.id)
       })
-      .catch((error) => ctx.logger?.warn?.(`ai-mistake-book: 批次状态收口失败 ${batchId}: ${messageOf(error)}`))
+      .catch((error) => {
+        // The batch directory can be gone (mistake_discard from another session).
+        // Lifting here matters anyway: without it the session would keep the
+        // four-tool surface forever, with no batch left to settle.
+        liftRestriction(session.id)
+        ctx.logger?.warn?.(`ai-mistake-book: 批次状态收口失败 ${batchId}: ${messageOf(error)}`)
+      })
   }), 'ai-mistake-book: batch lifecycle')
 
   ctx.effect(() => ctx.commands.register({
