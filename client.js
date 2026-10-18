@@ -122,6 +122,17 @@ window.__ModuleLoader__.load({
       sectionKnowledge: '知识点与技巧',
       sectionErrorTypes: '错因',
       sectionUncertain: '待人工确认',
+      customTemplates: '自定义模板',
+      customTemplatesHint: '这里的条目按顺序并入分析任务书的「用户自定义要求」；说明会一并写进提示词，正文原样并入。',
+      customTemplatesEmpty: '还没有自定义模板。',
+      addCustomTemplate: '新增模板',
+      customTitle: '模板标题（必填）',
+      customDescription: '说明（会一并写进提示词）',
+      customContent: '正文（Markdown，原样并入任务书）',
+      customEnabled: '启用',
+      customUntitled: '未命名模板',
+      customTitleEmpty: '标题为空，保存前必须填写',
+      customTitleEmptyNote: '有自定义模板缺少标题，填好标题后才能保存。',
       optSource: '含原卷图片',
       optCrop: '原卷只保留题目所在高度',
       exportedNote: '已导出 {n} 张卡片（{p} 份卷子）。',
@@ -292,6 +303,17 @@ window.__ModuleLoader__.load({
       sectionKnowledge: 'Knowledge points & skills',
       sectionErrorTypes: 'Error types',
       sectionUncertain: 'To confirm',
+      customTemplates: 'Custom templates',
+      customTemplatesHint: 'Entries are merged into the analysis brief under “用户自定义要求” in order; the description is written into the prompt too and the body is merged verbatim.',
+      customTemplatesEmpty: 'No custom templates yet.',
+      addCustomTemplate: 'Add template',
+      customTitle: 'Template title (required)',
+      customDescription: 'Description (written into the prompt)',
+      customContent: 'Body (Markdown, merged into the brief verbatim)',
+      customEnabled: 'Enabled',
+      customUntitled: 'Untitled template',
+      customTitleEmpty: 'Title is empty — required before saving',
+      customTitleEmptyNote: 'Some custom templates have no title; fill them in before saving.',
       optSource: 'Include the scan image',
       optCrop: 'Show only the question\'s height of the scan',
       exportedNote: 'Exported {n} card(s) from {p} paper(s).',
@@ -1019,6 +1041,40 @@ window.__ModuleLoader__.load({
       return 1
     }
 
+    /* —— 自定义模板（草稿） —— */
+
+    let customIdSeed = 0
+    /** 新条目的前端 id；保存时原样回传，折叠状态与条目才能对上号。 */
+    const newCustomId = () => `t-${Date.now().toString(36)}-${(customIdSeed += 1).toString(36)}`
+
+    /** 收敛自定义模板条目：只保留可编辑字段，缺 id 的补一个。 */
+    function normalizeCustomItems(value) {
+      const list = Array.isArray(value) ? value : []
+      return list
+        .filter((item) => item !== null && typeof item === 'object')
+        .map((item) => ({
+          id: typeof item.id === 'string' && item.id !== '' ? item.id : newCustomId(),
+          title: typeof item.title === 'string' ? item.title : '',
+          description: typeof item.description === 'string' ? item.description : '',
+          content: typeof item.content === 'string' ? item.content : '',
+          enabled: item.enabled !== false,
+        }))
+    }
+
+    const cloneCustomItems = (items) => (Array.isArray(items) ? items : []).map((item) => ({ ...item }))
+
+    /** dirty 判定：字段顺序固定，序列化比较足够。 */
+    const sameCustomItems = (left, right) => JSON.stringify(cloneCustomItems(left)) === JSON.stringify(cloneCustomItems(right))
+
+    /** 保存时只发后端认识的字段（updatedAt 等由后端自己维护）。 */
+    const customItemsPayload = (items) => (Array.isArray(items) ? items : []).map(({ id, title, description, content, enabled }) => ({
+      id,
+      title,
+      description,
+      content,
+      enabled,
+    }))
+
     /** 收敛 api('templates') 的响应；缺字段时退回 defaults，避免出现 undefined。 */
     function normalizeTemplatesPayload(value) {
       const templates = value?.templates ?? {}
@@ -1027,9 +1083,16 @@ window.__ModuleLoader__.load({
         ? templates[key]
         : (typeof defaults[key] === 'string' ? defaults[key] : ''))
       const defaultOf = (key) => (typeof defaults[key] === 'string' ? defaults[key] : '')
+      const metaSource = value?.meta ?? {}
+      const metaOf = (key) => {
+        const entry = metaSource[key]
+        return { title: asText(entry?.title), description: asText(entry?.description) }
+      }
       return {
         templates: { analysis: content('analysis'), background: content('background'), errorTaxonomy: content('errorTaxonomy') },
         defaults: { analysis: defaultOf('analysis'), background: defaultOf('background'), errorTaxonomy: defaultOf('errorTaxonomy') },
+        meta: { analysis: metaOf('analysis'), background: metaOf('background'), errorTaxonomy: metaOf('errorTaxonomy') },
+        custom: normalizeCustomItems(value?.custom),
         dir: asText(value?.dir),
         systemSuffix: asText(value?.systemSuffix),
         migratedCount: migratedCountOf(value?.migrated),
@@ -1070,33 +1133,130 @@ window.__ModuleLoader__.load({
       }
     }
 
+    /** meta 缺省值：旧宿主不下发 meta 时，块标题下退回字典里的 hint 文案。 */
+    const EMPTY_META = {
+      analysis: { title: '', description: '' },
+      background: { title: '', description: '' },
+      errorTaxonomy: { title: '', description: '' },
+    }
+
     /**
-     * 一块可编辑模板。
+     * 可收起板块的标题行。
      *
-     * 头上是「插入位置」说明和只改草稿的「恢复默认」：background / error-taxonomy
-     * 不是独立下发的，而是被替换进分析任务书的对应小节，所以位置提示很关键。
+     * 收起时只留标题 + 展开按钮（说明和块级操作一起隐藏），这是「所有板块都能
+     * 收回小标题」的公共实现；展开时才显示说明和操作按钮。
+     */
+    function BlockHeader(props) {
+      const { t, title, subtitle, open, onToggle, actions } = props
+      return h('div', { style: styles.row },
+        h('div', { style: { minWidth: '0', flex: '1 1 auto' } },
+          h('div', { style: { fontWeight: 600 } }, title),
+          open && subtitle !== undefined && subtitle !== null
+            ? h('div', { style: { ...styles.small, marginTop: '2px' } }, subtitle)
+            : null,
+        ),
+        h('div', { style: styles.wrap },
+          open ? actions : null,
+          h('button', { style: styles.button, onClick: onToggle }, open ? t('collapse') : t('expand')),
+        ),
+      )
+    }
+
+    /**
+     * 一块内置模板。
+     *
+     * 标题下的描述优先用服务端下发的 meta.description（它是元信息，不进 prompt），
+     * 旧宿主没有 meta 时退回字典里的 hint 文案；「恢复默认」只改草稿。
      */
     function PromptBlock(props) {
-      const { t, titleKey, placementKey, hintKey, value, minHeight, hasDefault, onChange, onReset } = props
+      const { t, titleKey, placementKey, hintKey, meta, value, minHeight, hasDefault, open, onToggle, onChange, onReset } = props
+      const description = meta !== undefined && meta.description !== '' ? meta.description : t(hintKey)
       return h('div', { style: styles.block },
-        h('div', { style: styles.row },
-          h('div', null,
-            h('div', { style: { fontWeight: 600 } }, t(titleKey)),
-            placementKey === undefined ? null : h('div', { style: styles.small }, t(placementKey)),
+        h(BlockHeader, {
+          t,
+          title: t(titleKey),
+          subtitle: h('div', null,
+            placementKey === undefined ? null : h('div', null, t(placementKey)),
+            h('div', { style: placementKey === undefined ? undefined : { marginTop: '2px' } }, description),
           ),
-          h('button', {
+          open,
+          onToggle,
+          actions: h('button', {
             style: styles.button,
             onClick: onReset,
             disabled: hasDefault !== true,
             title: t('resetDefault'),
           }, t('resetDefault')),
-        ),
-        hintKey === undefined ? null : h('div', { style: { ...styles.small, marginTop: '4px' } }, t(hintKey)),
-        h('textarea', {
+        }),
+        open ? h('textarea', {
           style: { ...styles.textarea, minHeight, marginTop: '8px' },
           value,
           onChange: (event) => onChange(event.target.value),
+        }) : null,
+      )
+    }
+
+    /**
+     * 一条自定义模板。
+     *
+     * 视觉结构与内置块一致（标题行 / 说明 / 正文 / 收起），只是标题和说明可编辑。
+     * 标题为空时在标题行给出警告——保存会被前端拦下，后端也会 400。
+     */
+    function CustomTemplateBlock(props) {
+      const { t, item, index, total, open, onToggle, onEdit, onMove, onRemove } = props
+      const untitled = item.title.trim() === ''
+      return h('div', { style: styles.block },
+        h(BlockHeader, {
+          t,
+          title: untitled ? t('customUntitled') : item.title,
+          subtitle: h('div', null,
+            untitled ? h('div', { style: styles.warn }, t('customTitleEmpty')) : null,
+            h('div', { style: untitled ? { marginTop: '2px' } : undefined },
+              `${index + 1}. ${t('customEnabled')}: ${item.enabled ? t('yes') : t('no')}`),
+          ),
+          open,
+          onToggle,
+          actions: h('div', { style: styles.wrap },
+            h('button', {
+              style: styles.button,
+              onClick: () => onMove(-1),
+              disabled: index === 0,
+              title: t('moveUp'),
+            }, '↑'),
+            h('button', {
+              style: styles.button,
+              onClick: () => onMove(1),
+              disabled: index === total - 1,
+              title: t('moveDown'),
+            }, '↓'),
+            h('button', { style: { ...styles.button, ...styles.danger }, onClick: onRemove }, t('deleteTemplate')),
+          ),
         }),
+        open ? h('div', { style: { marginTop: '8px' } },
+          h('input', {
+            style: styles.input,
+            placeholder: t('customTitle'),
+            value: item.title,
+            onChange: (event) => onEdit({ title: event.target.value }),
+          }),
+          h('input', {
+            style: { ...styles.input, marginTop: '6px' },
+            placeholder: t('customDescription'),
+            value: item.description,
+            onChange: (event) => onEdit({ description: event.target.value }),
+          }),
+          h('textarea', {
+            style: { ...styles.textarea, minHeight: '150px', marginTop: '6px' },
+            placeholder: t('customContent'),
+            value: item.content,
+            onChange: (event) => onEdit({ content: event.target.value }),
+          }),
+          h('label', {
+            style: { display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px', ...(item.enabled ? {} : styles.muted) },
+          },
+          h('input', { type: 'checkbox', checked: item.enabled, onChange: () => onEdit({ enabled: !item.enabled }) }),
+          ` ${t('customEnabled')}`),
+        ) : null,
       )
     }
 
@@ -1113,15 +1273,28 @@ window.__ModuleLoader__.load({
         statusNote: null,
         dir: '',
         systemSuffix: '',
-        systemOpen: false,
         migratedCount: 0,
         serverTemplates: EMPTY_TEMPLATES,
         defaults: EMPTY_TEMPLATES,
+        meta: EMPTY_META,
         draft: EMPTY_TEMPLATES,
+        serverCustom: [],
+        draftCustom: [],
         exportList: [],
         savedExport: null,
         exportDefaults: null,
         exportSettings: EMPTY_EXPORT_SETTINGS,
+        // 各板块的展开状态：默认全展开，系统追加块保持旧的默认折叠。
+        open: {
+          settings: true,
+          analysis: true,
+          background: true,
+          errorTaxonomy: true,
+          customSection: true,
+          system: false,
+          pdf: true,
+          customItems: {},
+        },
       })
 
       const load = React.useCallback((successNote) => {
@@ -1142,7 +1315,10 @@ window.__ModuleLoader__.load({
               migratedCount: parsed.migratedCount,
               serverTemplates: parsed.templates,
               defaults: parsed.defaults,
+              meta: parsed.meta,
               draft: { ...parsed.templates },
+              serverCustom: parsed.custom,
+              draftCustom: cloneCustomItems(parsed.custom),
               exportList: parsedExport.list,
               exportDefaults: parsedExport.defaults,
               savedExport: cloneExportSettings(parsedExport.settings),
@@ -1157,10 +1333,12 @@ window.__ModuleLoader__.load({
       React.useEffect(() => { load() }, [load])
 
       const draftDirty = TEMPLATE_KEYS.some((key) => state.draft[key] !== state.serverTemplates[key])
+        || !sameCustomItems(state.draftCustom, state.serverCustom)
         || !sameExportSettings(state.exportSettings, state.savedExport)
       const dirty = state.loaded && draftDirty
       const analysisEmpty = state.draft.analysis.trim() === ''
-      const canSave = dirty && !analysisEmpty && !state.saving
+      const blankCustomTitle = state.draftCustom.some((item) => item.title.trim() === '')
+      const canSave = dirty && !analysisEmpty && !blankCustomTitle && !state.saving
 
       const saveAll = () => {
         if (!canSave) return
@@ -1171,6 +1349,7 @@ window.__ModuleLoader__.load({
             background: state.draft.background,
             errorTaxonomy: state.draft.errorTaxonomy,
           }),
+          api('customTemplatesSaveAll', { items: customItemsPayload(state.draftCustom) }),
           api('exportSettingsSave', cloneExportSettings(state.exportSettings)),
         ])
           .then(() => load(t('savedAll')))
@@ -1180,6 +1359,7 @@ window.__ModuleLoader__.load({
       const discard = () => setState((current) => ({
         ...current,
         draft: { ...current.serverTemplates },
+        draftCustom: cloneCustomItems(current.serverCustom),
         exportSettings: cloneExportSettings(current.savedExport),
         note: null,
         saving: false,
@@ -1234,6 +1414,62 @@ window.__ModuleLoader__.load({
         exportSettings: { ...current.exportSettings, [key]: !current.exportSettings[key] },
       }))
 
+      /* —— 板块收起/展开（默认全展开，只有系统追加块默认折叠） —— */
+
+      const toggleOpen = (key) => setState((current) => ({
+        ...current,
+        open: { ...current.open, [key]: !current.open[key] },
+      }))
+
+      const toggleCustomOpen = (id) => setState((current) => ({
+        ...current,
+        open: {
+          ...current.open,
+          customItems: { ...current.open.customItems, [id]: current.open.customItems[id] === false },
+        },
+      }))
+
+      const isCustomOpen = (id) => state.open.customItems[id] !== false
+
+      /* —— 自定义模板草稿：增 / 改 / 删 / 排序（全部只改草稿） —— */
+
+      const addCustomTemplate = () => setState((current) => {
+        const id = newCustomId()
+        return {
+          ...current,
+          note: null,
+          draftCustom: [...current.draftCustom, { id, title: '', description: '', content: '', enabled: true }],
+          open: { ...current.open, customItems: { ...current.open.customItems, [id]: true } },
+        }
+      })
+
+      const editCustomTemplate = (id, patch) => setState((current) => ({
+        ...current,
+        note: null,
+        draftCustom: current.draftCustom.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+      }))
+
+      const removeCustomTemplate = (id) => setState((current) => {
+        const customItems = { ...current.open.customItems }
+        delete customItems[id]
+        return {
+          ...current,
+          note: null,
+          draftCustom: current.draftCustom.filter((item) => item.id !== id),
+          open: { ...current.open, customItems },
+        }
+      })
+
+      const moveCustomTemplate = (id, offset) => setState((current) => {
+        const items = [...current.draftCustom]
+        const index = items.findIndex((item) => item.id === id)
+        const target = index + offset
+        if (index < 0 || target < 0 || target >= items.length) return current
+        const [moved] = items.splice(index, 1)
+        items.splice(target, 0, moved)
+        return { ...current, note: null, draftCustom: items }
+      })
+
       const refreshStatus = () => {
         setState((current) => ({ ...current, statusBusy: true, statusNote: null }))
         api('status')
@@ -1260,30 +1496,33 @@ window.__ModuleLoader__.load({
       }
 
       const statusCard = h('div', { style: styles.card },
-        h('div', { style: styles.row },
-          h('div', null,
-            h('div', { style: { fontWeight: 600 } }, t('settingsOptions')),
-            h('div', { style: { ...styles.small, marginTop: '2px' } }, t('settingsOptionsHint')),
-          ),
-          h('button', { style: styles.button, onClick: refreshStatus, disabled: state.statusBusy }, state.statusBusy ? t('working') : t('refresh')),
-        ),
-        state.statusNote === null ? null : h('div', { style: { ...styles.small, marginTop: '6px', ...(state.statusNote.kind === 'ok' ? styles.ok : styles.error) } }, state.statusNote.text),
-        state.status === null
-          ? h('div', { style: { ...styles.muted, marginTop: '8px' } }, state.loading ? t('loading') : t('failed'))
-          : h('div', { style: { marginTop: '8px' } },
-              STATUS_GROUPS.map((group) => h('div', { key: group.title, style: styles.settingsGroup },
-                h('div', { style: styles.settingsGroupTitle }, t(group.title)),
-                group.fields.map(([field, labelKey, kind]) => {
-                  const raw = state.status[field]
-                  const missing = kind === 'text-empty' && asText(raw).trim() === ''
-                  return h('div', { key: field, style: styles.settingsRow },
-                    h('div', { style: styles.settingsKey }, t(labelKey)),
-                    h('div', { style: { ...styles.settingsValue, ...(kind === 'mono' ? styles.mono : {}), ...(missing ? styles.muted : {}) } },
-                      statusValue(kind, raw)),
-                  )
-                }),
-              )),
-            ),
+        h(BlockHeader, {
+          t,
+          title: t('settingsOptions'),
+          subtitle: t('settingsOptionsHint'),
+          open: state.open.settings,
+          onToggle: () => toggleOpen('settings'),
+          actions: h('button', { style: styles.button, onClick: refreshStatus, disabled: state.statusBusy }, state.statusBusy ? t('working') : t('refresh')),
+        }),
+        state.open.settings ? h('div', null,
+          state.statusNote === null ? null : h('div', { style: { ...styles.small, marginTop: '6px', ...(state.statusNote.kind === 'ok' ? styles.ok : styles.error) } }, state.statusNote.text),
+          state.status === null
+            ? h('div', { style: { ...styles.muted, marginTop: '8px' } }, state.loading ? t('loading') : t('failed'))
+            : h('div', { style: { marginTop: '8px' } },
+                STATUS_GROUPS.map((group) => h('div', { key: group.title, style: styles.settingsGroup },
+                  h('div', { style: styles.settingsGroupTitle }, t(group.title)),
+                  group.fields.map(([field, labelKey, kind]) => {
+                    const raw = state.status[field]
+                    const missing = kind === 'text-empty' && asText(raw).trim() === ''
+                    return h('div', { key: field, style: styles.settingsRow },
+                      h('div', { style: styles.settingsKey }, t(labelKey)),
+                      h('div', { style: { ...styles.settingsValue, ...(kind === 'mono' ? styles.mono : {}), ...(missing ? styles.muted : {}) } },
+                        statusValue(kind, raw)),
+                    )
+                  }),
+                )),
+              ),
+        ) : null,
       )
 
       const metaByKey = new Map(state.exportList.map((section) => [section.key, section]))
@@ -1295,20 +1534,14 @@ window.__ModuleLoader__.load({
       }
 
       const systemBlock = h('div', { style: styles.block },
-        h('div', { style: styles.row },
-          h('div', null,
-            h('div', { style: { fontWeight: 600 } }, t('blockSystem')),
-            h('div', { style: { ...styles.small, marginTop: '2px' } }, t('blockSystemHint')),
-          ),
-          h('div', { style: styles.wrap },
-            h('span', { style: styles.chip }, t('readOnly')),
-            h('button', {
-              style: styles.button,
-              onClick: () => setState((current) => ({ ...current, systemOpen: !current.systemOpen })),
-            }, state.systemOpen ? t('collapse') : t('expand')),
-          ),
-        ),
-        state.systemOpen ? h('div', null,
+        h(BlockHeader, {
+          t,
+          title: h('span', null, t('blockSystem'), ' ', h('span', { style: styles.chip }, t('readOnly'))),
+          subtitle: t('blockSystemHint'),
+          open: state.open.system,
+          onToggle: () => toggleOpen('system'),
+        }),
+        state.open.system ? h('div', null,
           h('div', { style: { ...styles.card, marginTop: '8px', background: token('--dsw-alias-bg-layer-2') } },
             h('pre', { style: styles.pre }, state.systemSuffix === '' ? t('none') : state.systemSuffix)),
           h('div', { style: { ...styles.small, fontWeight: 600, marginTop: '10px' } }, t('variables')),
@@ -1323,58 +1556,90 @@ window.__ModuleLoader__.load({
       )
 
       const pdfBlock = h('div', { style: styles.block },
-        h('div', { style: styles.row },
-          h('div', null,
-            h('div', { style: { fontWeight: 600 } }, t('blockPdf')),
-            h('div', { style: { ...styles.small, marginTop: '2px' } }, t('blockPdfHint')),
+        h(BlockHeader, {
+          t,
+          title: t('blockPdf'),
+          subtitle: t('blockPdfHint'),
+          open: state.open.pdf,
+          onToggle: () => toggleOpen('pdf'),
+          actions: h('button', { style: styles.button, onClick: resetExport }, t('resetDefault')),
+        }),
+        state.open.pdf ? h('div', null,
+          h('div', { style: { marginTop: '6px' } },
+            state.exportSettings.order.map((key, index) => h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+              h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+                h('input', {
+                  type: 'checkbox',
+                  checked: state.exportSettings.sections[key] !== false,
+                  onChange: () => toggleExportSection(key),
+                }),
+                h('span', { style: styles.settingsValue }, sectionLabel(key)),
+              ),
+              h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
+                h('button', {
+                  style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
+                  title: t('moveUp'),
+                  onClick: () => moveExportSection(key, -1),
+                  disabled: index === 0,
+                }, '↑'),
+                h('button', {
+                  style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
+                  title: t('moveDown'),
+                  onClick: () => moveExportSection(key, 1),
+                  disabled: index === state.exportSettings.order.length - 1,
+                }, '↓'),
+              ),
+            )),
           ),
-          h('button', { style: styles.button, onClick: resetExport }, t('resetDefault')),
-        ),
-        h('div', { style: { marginTop: '6px' } },
-          state.exportSettings.order.map((key, index) => h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+          h('div', { style: { ...styles.wrap, marginTop: '8px' } },
             h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
               h('input', {
                 type: 'checkbox',
-                checked: state.exportSettings.sections[key] !== false,
-                onChange: () => toggleExportSection(key),
+                checked: state.exportSettings.includeSource,
+                onChange: () => toggleExportOption('includeSource'),
               }),
-              h('span', { style: styles.settingsValue }, sectionLabel(key)),
-            ),
-            h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
-              h('button', {
-                style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
-                title: t('moveUp'),
-                onClick: () => moveExportSection(key, -1),
-                disabled: index === 0,
-              }, '↑'),
-              h('button', {
-                style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
-                title: t('moveDown'),
-                onClick: () => moveExportSection(key, 1),
-                disabled: index === state.exportSettings.order.length - 1,
-              }, '↓'),
-            ),
-          )),
-        ),
-        h('div', { style: { ...styles.wrap, marginTop: '8px' } },
-          h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+              ` ${t('optSource')}`),
+            h('label', {
+              style: { display: 'inline-flex', alignItems: 'center', gap: '6px', ...(state.exportSettings.includeSource ? {} : styles.muted) },
+            },
             h('input', {
               type: 'checkbox',
-              checked: state.exportSettings.includeSource,
-              onChange: () => toggleExportOption('includeSource'),
+              checked: state.exportSettings.cropToQuestion,
+              disabled: !state.exportSettings.includeSource,
+              onChange: () => toggleExportOption('cropToQuestion'),
             }),
-            ` ${t('optSource')}`),
-          h('label', {
-            style: { display: 'inline-flex', alignItems: 'center', gap: '6px', ...(state.exportSettings.includeSource ? {} : styles.muted) },
-          },
-          h('input', {
-            type: 'checkbox',
-            checked: state.exportSettings.cropToQuestion,
-            disabled: !state.exportSettings.includeSource,
-            onChange: () => toggleExportOption('cropToQuestion'),
-          }),
-          ` ${t('optCrop')}`),
-        ),
+            ` ${t('optCrop')}`),
+          ),
+        ) : null,
+      )
+
+      /** 自定义模板区：三份内置块之后、系统追加块之前，条目与内置块同一种卡片结构。 */
+      const customSection = h('div', { style: styles.block },
+        h(BlockHeader, {
+          t,
+          title: t('customTemplates'),
+          subtitle: t('customTemplatesHint'),
+          open: state.open.customSection,
+          onToggle: () => toggleOpen('customSection'),
+          actions: h('button', { style: styles.button, onClick: addCustomTemplate }, t('addCustomTemplate')),
+        }),
+        state.open.customSection ? h('div', null,
+          state.draftCustom.length === 0
+            ? h('div', { style: { ...styles.muted, marginTop: '6px' } }, t('customTemplatesEmpty'))
+            : null,
+          state.draftCustom.map((item, index) => h(CustomTemplateBlock, {
+            key: item.id,
+            t,
+            item,
+            index,
+            total: state.draftCustom.length,
+            open: isCustomOpen(item.id),
+            onToggle: () => toggleCustomOpen(item.id),
+            onEdit: (patch) => editCustomTemplate(item.id, patch),
+            onMove: (offset) => moveCustomTemplate(item.id, offset),
+            onRemove: () => removeCustomTemplate(item.id),
+          })),
+        ) : null,
       )
 
       return h('div', { style: styles.root },
@@ -1397,13 +1662,17 @@ window.__ModuleLoader__.load({
           state.note === null ? null : h('div', { style: { ...styles.small, marginTop: '6px', ...(state.note.kind === 'ok' ? styles.ok : styles.error) } }, state.note.text),
           state.migratedCount > 0 ? h('div', { style: { ...styles.small, marginTop: '6px', ...styles.warn } }, t('migratedNote').replace('{n}', String(state.migratedCount))) : null,
           analysisEmpty ? h('div', { style: { ...styles.small, marginTop: '6px', ...styles.warn } }, t('analysisEmptyNote')) : null,
+          blankCustomTitle ? h('div', { style: { ...styles.small, marginTop: '6px', ...styles.warn } }, t('customTitleEmptyNote')) : null,
           h(PromptBlock, {
             t,
             titleKey: 'blockAnalysis',
             hintKey: 'blockAnalysisHint',
+            meta: state.meta.analysis,
             value: state.draft.analysis,
             minHeight: '320px',
             hasDefault: typeof state.defaults.analysis === 'string' && state.defaults.analysis !== '',
+            open: state.open.analysis,
+            onToggle: () => toggleOpen('analysis'),
             onChange: editDraft('analysis'),
             onReset: () => resetTemplate('analysis'),
           }),
@@ -1412,9 +1681,12 @@ window.__ModuleLoader__.load({
             titleKey: 'blockBackground',
             placementKey: 'blockBackgroundPlacement',
             hintKey: 'blockBackgroundHint',
+            meta: state.meta.background,
             value: state.draft.background,
             minHeight: '200px',
             hasDefault: typeof state.defaults.background === 'string' && state.defaults.background !== '',
+            open: state.open.background,
+            onToggle: () => toggleOpen('background'),
             onChange: editDraft('background'),
             onReset: () => resetTemplate('background'),
           }),
@@ -1423,12 +1695,16 @@ window.__ModuleLoader__.load({
             titleKey: 'blockTaxonomy',
             placementKey: 'blockTaxonomyPlacement',
             hintKey: 'blockTaxonomyHint',
+            meta: state.meta.errorTaxonomy,
             value: state.draft.errorTaxonomy,
             minHeight: '170px',
             hasDefault: typeof state.defaults.errorTaxonomy === 'string' && state.defaults.errorTaxonomy !== '',
+            open: state.open.errorTaxonomy,
+            onToggle: () => toggleOpen('errorTaxonomy'),
             onChange: editDraft('errorTaxonomy'),
             onReset: () => resetTemplate('errorTaxonomy'),
           }),
+          customSection,
           systemBlock,
           pdfBlock,
         ),

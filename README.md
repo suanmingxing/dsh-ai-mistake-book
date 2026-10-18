@@ -14,7 +14,7 @@
 - **导出打印版 PDF**：每道错题的板块可勾选、可排序；**公式以 Word 原生公式（OMML）排版**，不是 Unicode 拼凑
 - **回收站**：删除先进 `_trash/`，可逐项还原，清空才真正销毁
 - **会话可追溯**：待归档页可跳回分析会话继续修改
-- **Prompt 配置**：设置页按模型实际接收顺序单列展示分析任务书、背景、错因分类和 PDF 导出模板；改默认 prompt 就是全部定制方式
+- **Prompt 配置**：设置页按模型实际接收顺序单列展示分析任务书、背景、错因分类和 PDF 导出模板；三块默认 prompt + 自定义模板都能收起/展开，既可改默认 prompt，也可添加自定义模板
 
 ## 环境要求
 
@@ -66,7 +66,7 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
 <archiveRoot>/
 ├─ inbox/<batchId>/     进行中的批次（原始扫描、光栅图）
 ├─ library/<学科>/<卷子>/cards/*.md   归档后的错题卡片
-├─ templates/           可编辑的提示词（analysis / background / error-taxonomy）
+├─ templates/           可编辑的提示词（analysis / background / error-taxonomy / custom-templates.json）
 ├─ exports/             导出的 PDF
 ├─ export-settings.json PDF 导出模板（板块顺序/勾选/原卷图）
 ├─ _trash/              回收站
@@ -90,15 +90,16 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
 设置页只有两块：
 
 - **设置选项**（置顶，只读）：当前生效的模型、光栅化、导出与存储参数；真正的修改入口在 DSH 的「设置 → 插件 → AI 错题本」。
-- **Prompt 配置**（单列，按模型实际接收顺序，全部默认展开）：
+- **Prompt 配置**（单列，按模型实际接收顺序，所有板块都可收起/展开）：
 
-  1. **分析任务书**（`templates/analysis.md`）——主体；`{{background}}` / `{{taxonomy}}` 是插入点
+  1. **分析任务书**（`templates/analysis.md`）——主体；`{{background}}` / `{{taxonomy}}` / `{{custom}}` 是插入点
   2. **难度与学段背景**（`templates/background.md`）——替换进分析任务书「三、难度标定背景」
   3. **错因分类**（`templates/error-taxonomy.md`）——替换进「四、错因分类」
-  4. **系统自动追加**（只读折叠）——每批次固定追加的工具调用速记，不可编辑
-  5. **PDF 导出模板**——六个板块的显示顺序、勾选、是否附原卷图、是否按题裁剪
+  4. **自定义模板**（`templates/custom-templates.json`）——可新增/删除/启用、↑↓ 排序；每条有标题、描述、正文；启用条目按顺序拼成任务书末尾的「用户自定义要求」一节，**描述也会写进 prompt**（与旧版格式一致）
+  5. **系统自动追加**（只读折叠）——每批次固定追加的工具调用速记，不可编辑
+  6. **PDF 导出模板**——六个板块的显示顺序、勾选、是否附原卷图、是否按题裁剪
 
-定制就是直接改这些默认 prompt，没有独立的"自定义模板"层；旧版本的 `templates/custom.json` 会在首次加载时自动并入分析任务书，原文件改名为 `custom.json.migrated`。
+三块默认模板的标题下会显示一段固定说明（后端 `TEMPLATE_META` 下发），只用于设置页展示、不写进 prompt。旧版本的 `templates/custom.json` 会在首次加载时自动并入分析任务书、原文件改名为 `custom.json.migrated`；之后的「自定义模板」改用新文件 `custom-templates.json`，不会再次触发迁移。
 
 不会自动保存：改完点「保存全部修改」；每块的「恢复默认」只改草稿，仍需保存。PDF 导出时「管理」页还可以对这一次导出做临时覆盖。
 
