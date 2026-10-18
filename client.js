@@ -1613,7 +1613,7 @@ window.__ModuleLoader__.load({
         ) : null,
       )
 
-      /** 自定义模板区：三份内置块之后、系统追加块之前，条目与内置块同一种卡片结构。 */
+      /** 自定义模板区：放在 PDF 导出模板之后，作为独立的附加区块（不参与 ①–⑤ 编号）。 */
       const customSection = h('div', { style: styles.block },
         h(BlockHeader, {
           t,
@@ -1704,9 +1704,9 @@ window.__ModuleLoader__.load({
             onChange: editDraft('errorTaxonomy'),
             onReset: () => resetTemplate('errorTaxonomy'),
           }),
-          customSection,
           systemBlock,
           pdfBlock,
+          customSection,
         ),
       )
     }

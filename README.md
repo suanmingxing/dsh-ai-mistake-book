@@ -95,9 +95,9 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
   1. **分析任务书**（`templates/analysis.md`）——主体；`{{background}}` / `{{taxonomy}}` / `{{custom}}` 是插入点
   2. **难度与学段背景**（`templates/background.md`）——替换进分析任务书「三、难度标定背景」
   3. **错因分类**（`templates/error-taxonomy.md`）——替换进「四、错因分类」
-  4. **自定义模板**（`templates/custom-templates.json`）——可新增/删除/启用、↑↓ 排序；每条有标题、描述、正文；启用条目按顺序拼成任务书末尾的「用户自定义要求」一节，**描述也会写进 prompt**（与旧版格式一致）
-  5. **系统自动追加**（只读折叠）——每批次固定追加的工具调用速记，不可编辑
-  6. **PDF 导出模板**——六个板块的显示顺序、勾选、是否附原卷图、是否按题裁剪
+  4. **系统自动追加**（只读折叠）——每批次固定追加的工具调用速记，不可编辑
+  5. **PDF 导出模板**——六个板块的显示顺序、勾选、是否附原卷图、是否按题裁剪
+  6. **自定义模板**（`templates/custom-templates.json`，位于 PDF 模板之后、不参与 ①–⑤ 编号）——可新增/删除/启用、↑↓ 排序；每条有标题、描述、正文；启用条目按顺序拼成任务书末尾的「用户自定义要求」一节，**描述也会写进 prompt**（与旧版格式一致）
 
 三块默认模板的标题下会显示一段固定说明（后端 `TEMPLATE_META` 下发），只用于设置页展示、不写进 prompt。旧版本的 `templates/custom.json` 会在首次加载时自动并入分析任务书、原文件改名为 `custom.json.migrated`；之后的「自定义模板」改用新文件 `custom-templates.json`，不会再次触发迁移。
 
