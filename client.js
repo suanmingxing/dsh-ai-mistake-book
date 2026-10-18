@@ -94,7 +94,7 @@ window.__ModuleLoader__.load({
       blockSystem: '④ 系统自动追加',
       blockSystemHint: '插件在任务书末尾自动追加的一段，只读；展开可查看原文与可用变量。',
       blockPdf: '⑤ PDF 导出模板',
-      blockPdfHint: '每道错题在导出 PDF 里的板块与顺序；勾选控制包含，↑↓ 调整顺序。',
+      blockPdfHint: '每道错题在导出 PDF 里的板块与顺序；勾选控制包含，↑↓ 调整顺序。预设板块与自定义板块在同一张列表里。',
       readOnly: '只读',
       variables: '可用变量',
       variablesHint: '在模板里用 {{变量名}} 引用；未识别的占位符会原样保留。',
@@ -122,17 +122,22 @@ window.__ModuleLoader__.load({
       sectionKnowledge: '知识点与技巧',
       sectionErrorTypes: '错因',
       sectionUncertain: '待人工确认',
+      sectionDescStem: '题干转录',
+      sectionDescWork: '作答与演算',
+      sectionDescAnswer: '卷面标注的正确答案',
+      sectionDescKnowledge: '知识点与技巧',
+      sectionDescErrorTypes: '错因',
+      sectionDescUncertain: '待人工确认',
       customTemplates: '自定义模板',
-      customTemplatesHint: '这里的条目按顺序并入分析任务书的「用户自定义要求」；说明会一并写进提示词，正文原样并入。',
-      customTemplatesEmpty: '还没有自定义模板。',
+      customTemplatesHint: '自定义模板就是 PDF 里的新板块：与上面六个预设板块排在同一张列表、一起排序。说明会写进分析提示词，模型据此为每道错题产出该板块的内容；勾选控制导出时是否包含。',
       addCustomTemplate: '新增模板',
       customTitle: '模板标题（必填）',
-      customDescription: '说明（会一并写进提示词）',
-      customContent: '正文（Markdown，原样并入任务书）',
+      customDescription: '说明（写进分析提示词）',
       customEnabled: '启用',
       customUntitled: '未命名模板',
       customTitleEmpty: '标题为空，保存前必须填写',
       customTitleEmptyNote: '有自定义模板缺少标题，填好标题后才能保存。',
+      editTemplate: '编辑',
       optSource: '含原卷图片',
       optCrop: '原卷只保留题目所在高度',
       exportedNote: '已导出 {n} 张卡片（{p} 份卷子）。',
@@ -275,7 +280,7 @@ window.__ModuleLoader__.load({
       blockSystem: '4. Appended by the system',
       blockSystemHint: 'Appended to the end of the brief by the plugin; read-only. Expand to see the text and the available variables.',
       blockPdf: '5. PDF export template',
-      blockPdfHint: 'Sections and their order in the exported PDF; tick to include, ↑↓ to reorder.',
+      blockPdfHint: 'Sections and their order in the exported PDF; tick to include, ↑↓ to reorder. Preset and custom sections share one list.',
       readOnly: 'Read-only',
       variables: 'Available variables',
       variablesHint: 'Reference them in a template as {{name}}; unknown placeholders stay visible.',
@@ -303,17 +308,22 @@ window.__ModuleLoader__.load({
       sectionKnowledge: 'Knowledge points & skills',
       sectionErrorTypes: 'Error types',
       sectionUncertain: 'To confirm',
+      sectionDescStem: 'Stem transcription',
+      sectionDescWork: 'Answer & working',
+      sectionDescAnswer: 'The correct answer marked on the paper',
+      sectionDescKnowledge: 'Knowledge points & skills',
+      sectionDescErrorTypes: 'Error types',
+      sectionDescUncertain: 'Items to confirm by hand',
       customTemplates: 'Custom templates',
-      customTemplatesHint: 'Entries are merged into the analysis brief under “用户自定义要求” in order; the description is written into the prompt too and the body is merged verbatim.',
-      customTemplatesEmpty: 'No custom templates yet.',
+      customTemplatesHint: 'A custom template is a new PDF section: it shares the same list and order as the six presets above. Its description is written into the analysis prompt so the model produces that section for every card; the tick controls whether the section is exported.',
       addCustomTemplate: 'Add template',
       customTitle: 'Template title (required)',
-      customDescription: 'Description (written into the prompt)',
-      customContent: 'Body (Markdown, merged into the brief verbatim)',
+      customDescription: 'Description (written into the analysis prompt)',
       customEnabled: 'Enabled',
       customUntitled: 'Untitled template',
       customTitleEmpty: 'Title is empty — required before saving',
       customTitleEmptyNote: 'Some custom templates have no title; fill them in before saving.',
+      editTemplate: 'Edit',
       optSource: 'Include the scan image',
       optCrop: 'Show only the question\'s height of the scan',
       exportedNote: 'Exported {n} card(s) from {p} paper(s).',
@@ -517,6 +527,19 @@ window.__ModuleLoader__.load({
       },
       settingsKey: { fontSize: '12px', color: token('--dsw-alias-label-secondary') },
       settingsValue: { fontSize: '12px', color: token('--dsw-alias-label-primary'), wordBreak: 'break-word' },
+      /** 统一列表行名称下的一行小字说明：只占一行，完整文本放在 title 里。 */
+      rowDesc: { marginLeft: '20px', marginTop: '1px', fontSize: '11px', color: token('--dsw-alias-label-secondary'), overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      /** 自定义板块行内展开的编辑区：横跨列表行的两列。 */
+      rowEditor: {
+        gridColumn: '1 / -1',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '6px',
+        marginTop: '6px',
+        padding: '8px',
+        borderRadius: '6px',
+        background: token('--dsw-alias-bg-layer-2'),
+      },
       settingsGroup: { marginTop: '10px' },
       settingsGroupTitle: { fontSize: '12px', fontWeight: 600, marginBottom: '2px' },
       /** Prompt 配置里的一块：用顶端分隔线代替嵌套卡片，避免卡片套卡片。 */
@@ -1017,6 +1040,28 @@ window.__ModuleLoader__.load({
       uncertain: 'sectionUncertain',
     }
 
+    /**
+     * 预设板块的说明文案（键与 CARD_SECTIONS 对应）。正常宿主会下发中文的
+     * description，设置页优先展示它；旧宿主没有这个字段时按当前语言取字典回退。
+     */
+    const SECTION_DESC_KEYS = {
+      stem: 'sectionDescStem',
+      work: 'sectionDescWork',
+      answer: 'sectionDescAnswer',
+      knowledge: 'sectionDescKnowledge',
+      errorTypes: 'sectionDescErrorTypes',
+      uncertain: 'sectionDescUncertain',
+    }
+
+    /**
+     * 自定义板块在 exportSettings.order 里的键：`tpl:<模板 id>`。
+     * 与后端 lib/export-settings.js 的 customKey(id) 保持一致。
+     */
+    const CUSTOM_KEY_PREFIX = 'tpl:'
+    const customKeyOf = (id) => `${CUSTOM_KEY_PREFIX}${id}`
+    const isCustomKey = (key) => typeof key === 'string' && key.startsWith(CUSTOM_KEY_PREFIX)
+    const customIdOf = (key) => (isCustomKey(key) ? key.slice(CUSTOM_KEY_PREFIX.length) : null)
+
     const asText = (value) => (typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value))
 
     const cloneExportSettings = (settings) => ({
@@ -1030,7 +1075,10 @@ window.__ModuleLoader__.load({
       if (left === null || right === null) return false
       if (left.includeSource !== right.includeSource || left.cropToQuestion !== right.cropToQuestion) return false
       if (left.order.length !== right.order.length) return false
-      return left.order.every((key, index) => key === right.order[index] && (left.sections[key] !== false) === (right.sections[key] !== false))
+      // 顺序键逐项比较；自定义板块的勾选状态存在草稿条目里（由 sameCustomItems 负责），
+      // 这里只看预设板块的 sections。
+      return left.order.every((key, index) => key === right.order[index]
+        && (isCustomKey(key) || (left.sections[key] !== false) === (right.sections[key] !== false)))
     }
 
     /** 迁移回执（{count} / 数字 / null）统一成数字；非空但形状未知时至少提示一次。 */
@@ -1047,7 +1095,7 @@ window.__ModuleLoader__.load({
     /** 新条目的前端 id；保存时原样回传，折叠状态与条目才能对上号。 */
     const newCustomId = () => `t-${Date.now().toString(36)}-${(customIdSeed += 1).toString(36)}`
 
-    /** 收敛自定义模板条目：只保留可编辑字段，缺 id 的补一个。 */
+    /** 收敛自定义板块条目：新契约只有标题/说明/启用，正文（content）已取消。 */
     function normalizeCustomItems(value) {
       const list = Array.isArray(value) ? value : []
       return list
@@ -1056,22 +1104,25 @@ window.__ModuleLoader__.load({
           id: typeof item.id === 'string' && item.id !== '' ? item.id : newCustomId(),
           title: typeof item.title === 'string' ? item.title : '',
           description: typeof item.description === 'string' ? item.description : '',
-          content: typeof item.content === 'string' ? item.content : '',
           enabled: item.enabled !== false,
         }))
     }
 
-    const cloneCustomItems = (items) => (Array.isArray(items) ? items : []).map((item) => ({ ...item }))
+    const cloneCustomItems = (items) => (Array.isArray(items) ? items : []).map((item) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      enabled: item.enabled,
+    }))
 
     /** dirty 判定：字段顺序固定，序列化比较足够。 */
     const sameCustomItems = (left, right) => JSON.stringify(cloneCustomItems(left)) === JSON.stringify(cloneCustomItems(right))
 
-    /** 保存时只发后端认识的字段（updatedAt 等由后端自己维护）。 */
-    const customItemsPayload = (items) => (Array.isArray(items) ? items : []).map(({ id, title, description, content, enabled }) => ({
+    /** 保存时只发后端认识的字段（updatedAt 等由后端自己维护；content 已废弃）。 */
+    const customItemsPayload = (items) => (Array.isArray(items) ? items : []).map(({ id, title, description, enabled }) => ({
       id,
       title,
       description,
-      content,
       enabled,
     }))
 
@@ -1099,24 +1150,61 @@ window.__ModuleLoader__.load({
       }
     }
 
-    /** 收敛 api('exportSettings') 的响应：已知板块去重、缺失的按服务端顺序补齐。 */
-    function normalizeExportPayload(value) {
+    /**
+     * 收敛 api('exportSettings') 的响应。
+     *
+     * 新宿主会把按 order 排好的目录（sections，含 kind/description 与自定义项）直接
+     * 下发；旧宿主只给六个预设板块，也不认识 order 里的 `tpl:<id>`。这里统一收口：
+     *   - 目录 = 服务端 sections，再补上草稿里的自定义板块（旧宿主 / 无 custom 时）；
+     *   - order 只保留目录里的键、去重，缺失项按目录顺序补齐；
+     *   - sections 只保留预设板块（自定义板块的开关存在草稿条目里）；
+     *   - 陈旧的 `tpl:` 键（模板已删除）会被过滤掉。
+     */
+    function normalizeExportPayload(value, customItems) {
       const settings = value?.settings ?? {}
-      const list = Array.isArray(value?.sections)
-        ? value.sections.filter((section) => section !== null && typeof section === 'object' && typeof section.key === 'string' && section.key !== '')
-        : []
-      const known = list.length > 0
-        ? list.map((section) => section.key)
-        : (Array.isArray(settings.order) ? settings.order.filter((key) => typeof key === 'string' && key !== '') : [])
+      const items = Array.isArray(customItems) ? customItems : []
+      const catalogue = []
+      const known = new Set()
+      const remember = (entry) => {
+        if (entry === null || typeof entry !== 'object') return
+        const key = typeof entry.key === 'string' ? entry.key : ''
+        if (key === '' || known.has(key)) return
+        known.add(key)
+        catalogue.push({
+          key,
+          kind: entry.kind === 'custom' || isCustomKey(key) ? 'custom' : 'preset',
+          id: typeof entry.id === 'string' ? entry.id : (customIdOf(key) ?? undefined),
+          heading: asText(entry.heading),
+          label: asText(entry.label),
+          description: asText(entry.description),
+        })
+      }
+      const list = Array.isArray(value?.sections) ? value.sections : []
+      if (list.length > 0) {
+        list.forEach(remember)
+      } else {
+        // 更老的宿主连 sections 都没有：用 order + 预设字典兜底。
+        // `tpl:` 键不从这里恢复——自定义板块只从草稿条目重建，避免已删除模板留下幽灵行。
+        const fallbackOrder = Array.isArray(settings.order)
+          ? settings.order.filter((key) => typeof key === 'string' && key !== '' && !isCustomKey(key))
+          : []
+        fallbackOrder.forEach((key) => remember({ key }))
+        Object.keys(SECTION_LABEL_KEYS).forEach((key) => remember({ key }))
+      }
+      // 自定义板块即使宿主没登记，也要出现在统一列表里（条目来自草稿）。
+      for (const item of items) {
+        remember({ key: customKeyOf(item.id), kind: 'custom', id: item.id, heading: item.title, label: item.title, description: item.description })
+      }
       const normalizeSettings = (raw) => {
         const order = []
-        const remember = (key) => { if (known.includes(key) && !order.includes(key)) order.push(key) }
-        if (Array.isArray(raw?.order)) raw.order.forEach(remember)
-        known.forEach(remember)
+        const push = (key) => { if (known.has(key) && !order.includes(key)) order.push(key) }
+        if (Array.isArray(raw?.order)) raw.order.forEach(push)
+        catalogue.forEach((entry) => push(entry.key))
         const sections = {}
-        for (const key of order) {
-          const value = raw?.sections !== null && typeof raw?.sections === 'object' ? raw.sections[key] : undefined
-          sections[key] = value === undefined ? true : value !== false
+        for (const entry of catalogue) {
+          if (entry.kind === 'custom') continue
+          const source = raw?.sections !== null && typeof raw?.sections === 'object' ? raw.sections : {}
+          sections[entry.key] = source[entry.key] === undefined ? true : source[entry.key] !== false
         }
         return {
           sections,
@@ -1126,7 +1214,7 @@ window.__ModuleLoader__.load({
         }
       }
       return {
-        list,
+        list: catalogue,
         settings: normalizeSettings(settings),
         // 内置默认值由服务端下发；旧宿主没有该字段时返回 null，重置按钮退回当前顺序。
         defaults: value?.defaults !== null && typeof value?.defaults === 'object' ? normalizeSettings(value.defaults) : null,
@@ -1196,70 +1284,6 @@ window.__ModuleLoader__.load({
       )
     }
 
-    /**
-     * 一条自定义模板。
-     *
-     * 视觉结构与内置块一致（标题行 / 说明 / 正文 / 收起），只是标题和说明可编辑。
-     * 标题为空时在标题行给出警告——保存会被前端拦下，后端也会 400。
-     */
-    function CustomTemplateBlock(props) {
-      const { t, item, index, total, open, onToggle, onEdit, onMove, onRemove } = props
-      const untitled = item.title.trim() === ''
-      return h('div', { style: styles.block },
-        h(BlockHeader, {
-          t,
-          title: untitled ? t('customUntitled') : item.title,
-          subtitle: h('div', null,
-            untitled ? h('div', { style: styles.warn }, t('customTitleEmpty')) : null,
-            h('div', { style: untitled ? { marginTop: '2px' } : undefined },
-              `${index + 1}. ${t('customEnabled')}: ${item.enabled ? t('yes') : t('no')}`),
-          ),
-          open,
-          onToggle,
-          actions: h('div', { style: styles.wrap },
-            h('button', {
-              style: styles.button,
-              onClick: () => onMove(-1),
-              disabled: index === 0,
-              title: t('moveUp'),
-            }, '↑'),
-            h('button', {
-              style: styles.button,
-              onClick: () => onMove(1),
-              disabled: index === total - 1,
-              title: t('moveDown'),
-            }, '↓'),
-            h('button', { style: { ...styles.button, ...styles.danger }, onClick: onRemove }, t('deleteTemplate')),
-          ),
-        }),
-        open ? h('div', { style: { marginTop: '8px' } },
-          h('input', {
-            style: styles.input,
-            placeholder: t('customTitle'),
-            value: item.title,
-            onChange: (event) => onEdit({ title: event.target.value }),
-          }),
-          h('input', {
-            style: { ...styles.input, marginTop: '6px' },
-            placeholder: t('customDescription'),
-            value: item.description,
-            onChange: (event) => onEdit({ description: event.target.value }),
-          }),
-          h('textarea', {
-            style: { ...styles.textarea, minHeight: '150px', marginTop: '6px' },
-            placeholder: t('customContent'),
-            value: item.content,
-            onChange: (event) => onEdit({ content: event.target.value }),
-          }),
-          h('label', {
-            style: { display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '8px', ...(item.enabled ? {} : styles.muted) },
-          },
-          h('input', { type: 'checkbox', checked: item.enabled, onChange: () => onEdit({ enabled: !item.enabled }) }),
-          ` ${t('customEnabled')}`),
-        ) : null,
-      )
-    }
-
     function SettingsTab(props) {
       const { t } = props
       const [state, setState] = React.useState({
@@ -1290,9 +1314,9 @@ window.__ModuleLoader__.load({
           analysis: true,
           background: true,
           errorTaxonomy: true,
-          customSection: true,
           system: false,
           pdf: true,
+          // 自定义板块行的行内编辑区：默认收起，新增条目时自动展开。
           customItems: {},
         },
       })
@@ -1302,7 +1326,7 @@ window.__ModuleLoader__.load({
         Promise.all([api('status'), api('templates'), api('exportSettings', {})])
           .then(([status, templatesValue, exportValue]) => {
             const parsed = normalizeTemplatesPayload(templatesValue)
-            const parsedExport = normalizeExportPayload(exportValue)
+            const parsedExport = normalizeExportPayload(exportValue, parsed.custom)
             setState((current) => ({
               ...current,
               loading: false,
@@ -1343,6 +1367,9 @@ window.__ModuleLoader__.load({
       const saveAll = () => {
         if (!canSave) return
         setState((current) => ({ ...current, saving: true, note: null }))
+        // Custom templates must land BEFORE the export settings: the backend filters
+        // unknown `tpl:<id>` order keys against the saved template list, so a brand
+        // new section would lose its position if the two requests raced.
         Promise.all([
           api('templateSaveAll', {
             analysis: state.draft.analysis,
@@ -1350,8 +1377,8 @@ window.__ModuleLoader__.load({
             errorTaxonomy: state.draft.errorTaxonomy,
           }),
           api('customTemplatesSaveAll', { items: customItemsPayload(state.draftCustom) }),
-          api('exportSettingsSave', cloneExportSettings(state.exportSettings)),
         ])
+          .then(() => api('exportSettingsSave', cloneExportSettings(state.exportSettings)))
           .then(() => load(t('savedAll')))
           .catch((error) => setState((current) => ({ ...current, saving: false, note: { kind: 'error', text: error.message } })))
       }
@@ -1371,16 +1398,45 @@ window.__ModuleLoader__.load({
         return { ...current, draft: { ...current.draft, [key]: value }, note: null }
       })
 
-      /** PDF 模板「恢复默认」：用服务端下发的内置默认（旧宿主没有时退回全开+当前顺序）。 */
+      /**
+       * PDF 模板「恢复默认」：用服务端下发的内置默认。
+       *
+       * 默认顺序 = 预设六板块 → 自定义板块（后端 defaults 已是这个形状）；旧宿主
+       * 没有 defaults 时按当前预设顺序 + 自定义草稿顺序兜底。只重置 PDF 设置，
+       * 自定义板块的「启用」属于模板本身，保留草稿里的选择。
+       */
       const resetExport = () => setState((current) => {
-        const fallbackOrder = current.exportList.map((section) => section.key)
-        const defaults = current.exportDefaults ?? {
-          sections: Object.fromEntries(fallbackOrder.map((key) => [key, true])),
-          order: fallbackOrder,
-          includeSource: true,
-          cropToQuestion: true,
+        const defaults = current.exportDefaults
+        const customKeys = current.draftCustom.map((item) => customKeyOf(item.id))
+        const customIds = new Set(current.draftCustom.map((item) => item.id))
+        const presetKeys = current.exportSettings.order.filter((key) => !isCustomKey(key))
+        const defaultOrder = Array.isArray(defaults?.order) ? defaults.order : []
+        const presets = []
+        for (const key of defaultOrder) if (!isCustomKey(key) && !presets.includes(key)) presets.push(key)
+        for (const key of presetKeys) if (!presets.includes(key)) presets.push(key)
+        const customs = []
+        // defaults 里可能还留着「草稿里已删除」的 tpl 键（删除还没保存），重新加回来会让幽灵行重现。
+        for (const key of defaultOrder) {
+          if (isCustomKey(key) && customIds.has(customIdOf(key)) && !customs.includes(key)) customs.push(key)
         }
-        return { ...current, note: null, exportSettings: cloneExportSettings(defaults) }
+        for (const key of customKeys) if (!customs.includes(key)) customs.push(key)
+        const order = [...presets, ...customs]
+        const sections = {}
+        for (const key of order) {
+          if (isCustomKey(key)) continue
+          const stored = defaults?.sections?.[key]
+          sections[key] = stored === undefined ? true : stored !== false
+        }
+        return {
+          ...current,
+          note: null,
+          exportSettings: {
+            sections,
+            order,
+            includeSource: defaults?.includeSource !== false,
+            cropToQuestion: defaults?.cropToQuestion !== false,
+          },
+        }
       })
 
       const editDraft = (key) => (value) => setState((current) => ({
@@ -1389,23 +1445,50 @@ window.__ModuleLoader__.load({
         draft: { ...current.draft, [key]: value },
       }))
 
-      const toggleExportSection = (key) => setState((current) => ({
-        ...current,
-        note: null,
-        exportSettings: {
-          ...current.exportSettings,
-          sections: { ...current.exportSettings.sections, [key]: current.exportSettings.sections[key] === false },
-        },
-      }))
+      /** 统一列表的勾选：预设改 sections[key]，自定义改对应草稿条目的 enabled。 */
+      const toggleExportRow = (key) => setState((current) => {
+        if (!isCustomKey(key)) {
+          return {
+            ...current,
+            note: null,
+            exportSettings: {
+              ...current.exportSettings,
+              sections: {
+                ...current.exportSettings.sections,
+                [key]: current.exportSettings.sections[key] === false,
+              },
+            },
+          }
+        }
+        const id = customIdOf(key)
+        return {
+          ...current,
+          note: null,
+          draftCustom: current.draftCustom.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)),
+        }
+      })
 
-      const moveExportSection = (key, offset) => setState((current) => {
+      /**
+       * 统一列表排序：整张 order 一起移动（预设与自定义混排），同时让自定义草稿
+       * 的先后顺序与列表一致——模型按草稿顺序接收「自定义板块要求」，两边不能打架。
+       */
+      const moveExportRow = (key, offset) => setState((current) => {
         const order = [...current.exportSettings.order]
         const index = order.indexOf(key)
         const target = index + offset
         if (index < 0 || target < 0 || target >= order.length) return current
         order.splice(index, 1)
         order.splice(target, 0, key)
-        return { ...current, note: null, exportSettings: { ...current.exportSettings, order } }
+        const byId = new Map(current.draftCustom.map((item) => [item.id, item]))
+        const customOrder = order.map((entry) => customIdOf(entry)).filter((id) => id !== null)
+        const reordered = customOrder.map((id) => byId.get(id)).filter((item) => item !== undefined)
+        const extras = current.draftCustom.filter((item) => !customOrder.includes(item.id))
+        return {
+          ...current,
+          note: null,
+          draftCustom: [...reordered, ...extras],
+          exportSettings: { ...current.exportSettings, order },
+        }
       })
 
       const toggleExportOption = (key) => setState((current) => ({
@@ -1421,24 +1504,27 @@ window.__ModuleLoader__.load({
         open: { ...current.open, [key]: !current.open[key] },
       }))
 
+      /** 自定义板块行的行内编辑区：默认收起，点「编辑」才展开。 */
       const toggleCustomOpen = (id) => setState((current) => ({
         ...current,
         open: {
           ...current.open,
-          customItems: { ...current.open.customItems, [id]: current.open.customItems[id] === false },
+          customItems: { ...current.open.customItems, [id]: current.open.customItems[id] !== true },
         },
       }))
 
-      const isCustomOpen = (id) => state.open.customItems[id] !== false
+      const isCustomOpen = (id) => state.open.customItems[id] === true
 
-      /* —— 自定义模板草稿：增 / 改 / 删 / 排序（全部只改草稿） —— */
+      /* —— 自定义板块草稿：增 / 改 / 删（全部只改草稿，随「保存全部修改」提交） —— */
 
       const addCustomTemplate = () => setState((current) => {
         const id = newCustomId()
         return {
           ...current,
           note: null,
-          draftCustom: [...current.draftCustom, { id, title: '', description: '', content: '', enabled: true }],
+          draftCustom: [...current.draftCustom, { id, title: '', description: '', enabled: true }],
+          // 新板块追加到统一列表末尾（预设之后），并自动展开行内编辑。
+          exportSettings: { ...current.exportSettings, order: [...current.exportSettings.order, customKeyOf(id)] },
           open: { ...current.open, customItems: { ...current.open.customItems, [id]: true } },
         }
       })
@@ -1449,25 +1535,18 @@ window.__ModuleLoader__.load({
         draftCustom: current.draftCustom.map((item) => (item.id === id ? { ...item, ...patch } : item)),
       }))
 
+      /** 删除自定义板块：草稿条目与统一列表里的 `tpl:<id>` 键一起移除。 */
       const removeCustomTemplate = (id) => setState((current) => {
         const customItems = { ...current.open.customItems }
         delete customItems[id]
+        const key = customKeyOf(id)
         return {
           ...current,
           note: null,
           draftCustom: current.draftCustom.filter((item) => item.id !== id),
+          exportSettings: { ...current.exportSettings, order: current.exportSettings.order.filter((entry) => entry !== key) },
           open: { ...current.open, customItems },
         }
-      })
-
-      const moveCustomTemplate = (id, offset) => setState((current) => {
-        const items = [...current.draftCustom]
-        const index = items.findIndex((item) => item.id === id)
-        const target = index + offset
-        if (index < 0 || target < 0 || target >= items.length) return current
-        const [moved] = items.splice(index, 1)
-        items.splice(target, 0, moved)
-        return { ...current, note: null, draftCustom: items }
       })
 
       const refreshStatus = () => {
@@ -1526,11 +1605,123 @@ window.__ModuleLoader__.load({
       )
 
       const metaByKey = new Map(state.exportList.map((section) => [section.key, section]))
+      const draftCustomById = new Map(state.draftCustom.map((item) => [item.id, item]))
+
+      /** 预设板块名称：中英文按 key 取字典，服务端 label 作为旧宿主/未知板块的回退。 */
       const sectionLabel = (key) => {
         const meta = metaByKey.get(key)
         const localeKey = SECTION_LABEL_KEYS[key]
         if (localeKey !== undefined) return t(localeKey)
-        return meta === undefined || asText(meta.label) === '' ? key : meta.label
+        return meta === undefined || asText(meta.label) === '' ? key : asText(meta.label)
+      }
+
+      /**
+       * 预设板块的一行说明：优先用服务端 CARD_SECTIONS 的 description（与旧版展示
+       * meta.description 的做法一致：说明是元信息，界面语言只做旧宿主的回退）。
+       */
+      const sectionDescription = (key, meta) => {
+        const server = asText(meta?.description)
+        if (server !== '') return server
+        const localeKey = SECTION_DESC_KEYS[key]
+        if (localeKey === undefined) return ''
+        const translated = t(localeKey)
+        return translated === localeKey ? '' : translated
+      }
+
+      /** 统一列表的 ↑↓：预设与自定义板块在同一张 order 里一起排。 */
+      const rowMoveButtons = (key, index, total) => [
+        h('button', {
+          key: 'up',
+          style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
+          title: t('moveUp'),
+          onClick: () => moveExportRow(key, -1),
+          disabled: index === 0,
+        }, '↑'),
+        h('button', {
+          key: 'down',
+          style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
+          title: t('moveDown'),
+          onClick: () => moveExportRow(key, 1),
+          disabled: index === total - 1,
+        }, '↓'),
+      ]
+
+      /** 预设板块行：勾选 → sections[key]；名称下一行小字是 CARD_SECTIONS 的说明。 */
+      const presetRow = (key, index) => {
+        const meta = metaByKey.get(key)
+        const description = sectionDescription(key, meta)
+        return h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+          h('div', { style: { minWidth: '0' } },
+            h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+              h('input', {
+                type: 'checkbox',
+                checked: state.exportSettings.sections[key] !== false,
+                onChange: () => toggleExportRow(key),
+              }),
+              h('span', { style: styles.settingsValue }, sectionLabel(key)),
+            ),
+            description === '' ? null : h('div', { style: styles.rowDesc, title: description }, description),
+          ),
+          h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
+            rowMoveButtons(key, index, state.exportSettings.order.length)),
+        )
+      }
+
+      /**
+       * 自定义板块行：勾选 → 草稿条目的 enabled；「编辑」在行内展开标题与说明输入，
+       * 「删除」同时从草稿和 order 的 `tpl:<id>` 键里移除。两者都只改草稿。
+       * 草稿里找不到条目（脏数据）时退化成只读一行，页面不崩。
+       */
+      const customRow = (key, index) => {
+        const id = customIdOf(key)
+        const item = draftCustomById.get(id)
+        if (item === undefined) {
+          const meta = metaByKey.get(key)
+          return h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+            h('div', { style: styles.settingsValue }, asText(meta?.label ?? id)),
+            h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
+              rowMoveButtons(key, index, state.exportSettings.order.length)),
+          )
+        }
+        const editing = isCustomOpen(item.id)
+        const untitled = item.title.trim() === ''
+        return h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+          h('div', { style: { minWidth: '0' } },
+            h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+              h('input', {
+                type: 'checkbox',
+                checked: item.enabled,
+                title: t('customEnabled'),
+                onChange: () => toggleExportRow(key),
+              }),
+              h('span', {
+                style: { ...styles.settingsValue, ...(untitled ? styles.warn : {}) },
+                title: item.description === '' ? undefined : item.description,
+              }, untitled ? t('customUntitled') : item.title),
+            ),
+            untitled ? h('div', { style: { ...styles.small, ...styles.warn, marginLeft: '20px' } }, t('customTitleEmpty')) : null,
+          ),
+          h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
+            rowMoveButtons(key, index, state.exportSettings.order.length),
+            h('button', { style: styles.button, onClick: () => toggleCustomOpen(item.id) },
+              editing ? t('collapse') : t('editTemplate')),
+            h('button', { style: { ...styles.button, ...styles.danger }, onClick: () => removeCustomTemplate(item.id) }, t('deleteTemplate')),
+          ),
+          editing ? h('div', { style: styles.rowEditor },
+            h('input', {
+              style: styles.input,
+              placeholder: t('customTitle'),
+              value: item.title,
+              onChange: (event) => editCustomTemplate(item.id, { title: event.target.value }),
+            }),
+            h('textarea', {
+              style: { ...styles.textarea, minHeight: '60px' },
+              placeholder: t('customDescription'),
+              value: item.description,
+              onChange: (event) => editCustomTemplate(item.id, { description: event.target.value }),
+            }),
+          ) : null,
+        )
       }
 
       const systemBlock = h('div', { style: styles.block },
@@ -1565,33 +1756,20 @@ window.__ModuleLoader__.load({
           actions: h('button', { style: styles.button, onClick: resetExport }, t('resetDefault')),
         }),
         state.open.pdf ? h('div', null,
+          // 统一列表：预设六板块 + 自定义板块，按 exportSettings.order 排（含 `tpl:<id>` 键）。
           h('div', { style: { marginTop: '6px' } },
-            state.exportSettings.order.map((key, index) => h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
-              h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
-                h('input', {
-                  type: 'checkbox',
-                  checked: state.exportSettings.sections[key] !== false,
-                  onChange: () => toggleExportSection(key),
-                }),
-                h('span', { style: styles.settingsValue }, sectionLabel(key)),
-              ),
-              h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
-                h('button', {
-                  style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
-                  title: t('moveUp'),
-                  onClick: () => moveExportSection(key, -1),
-                  disabled: index === 0,
-                }, '↑'),
-                h('button', {
-                  style: { ...styles.button, padding: '2px 8px', lineHeight: 1.2 },
-                  title: t('moveDown'),
-                  onClick: () => moveExportSection(key, 1),
-                  disabled: index === state.exportSettings.order.length - 1,
-                }, '↓'),
-              ),
-            )),
+            state.exportSettings.order.map((key, index) => (isCustomKey(key) ? customRow(key, index) : presetRow(key, index))),
           ),
-          h('div', { style: { ...styles.wrap, marginTop: '8px' } },
+          // 列表最下方是「自定义模板」区域：说明 + 新增入口。列表与它之间**不画分隔线**——
+          // 白线只用于区分 ①②③④ 这些 prompt 块；PDF 块自身与 ④ 的分隔由 styles.block 保留。
+          h('div', { style: { marginTop: '10px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' } },
+            h('div', { style: { minWidth: '0' } },
+              h('div', { style: { fontWeight: 600 } }, t('customTemplates')),
+              h('div', { style: { ...styles.small, marginTop: '2px' } }, t('customTemplatesHint')),
+            ),
+            h('button', { style: styles.button, onClick: addCustomTemplate }, t('addCustomTemplate')),
+          ),
+          h('div', { style: { ...styles.wrap, marginTop: '10px' } },
             h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
               h('input', {
                 type: 'checkbox',
@@ -1610,35 +1788,6 @@ window.__ModuleLoader__.load({
             }),
             ` ${t('optCrop')}`),
           ),
-        ) : null,
-      )
-
-      /** 自定义模板区：放在 PDF 导出模板之后，作为独立的附加区块（不参与 ①–⑤ 编号）。 */
-      const customSection = h('div', { style: styles.block },
-        h(BlockHeader, {
-          t,
-          title: t('customTemplates'),
-          subtitle: t('customTemplatesHint'),
-          open: state.open.customSection,
-          onToggle: () => toggleOpen('customSection'),
-          actions: h('button', { style: styles.button, onClick: addCustomTemplate }, t('addCustomTemplate')),
-        }),
-        state.open.customSection ? h('div', null,
-          state.draftCustom.length === 0
-            ? h('div', { style: { ...styles.muted, marginTop: '6px' } }, t('customTemplatesEmpty'))
-            : null,
-          state.draftCustom.map((item, index) => h(CustomTemplateBlock, {
-            key: item.id,
-            t,
-            item,
-            index,
-            total: state.draftCustom.length,
-            open: isCustomOpen(item.id),
-            onToggle: () => toggleCustomOpen(item.id),
-            onEdit: (patch) => editCustomTemplate(item.id, patch),
-            onMove: (offset) => moveCustomTemplate(item.id, offset),
-            onRemove: () => removeCustomTemplate(item.id),
-          })),
         ) : null,
       )
 
@@ -1706,7 +1855,6 @@ window.__ModuleLoader__.load({
           }),
           systemBlock,
           pdfBlock,
-          customSection,
         ),
       )
     }
@@ -1742,7 +1890,13 @@ window.__ModuleLoader__.load({
         api('exportSettings', {})
           .then((value) => {
             if (!alive) return
-            setExportSectionList(Array.isArray(value.sections) ? value.sections : [])
+            // 自定义板块的开关在模板自身的 enabled 上（设置页统一列表控制），导出接口
+            // 的「本次覆盖」只作用于预设六板块——过滤掉自定义条目，免得勾了没反应。
+            const sections = Array.isArray(value.sections) ? value.sections : []
+            setExportSectionList(sections.filter((section) => section !== null
+              && typeof section === 'object'
+              && section.kind !== 'custom'
+              && !String(section.key ?? '').startsWith('tpl:')))
             setExportOptions({
               sections: { ...(value.settings?.sections ?? {}) },
               includeSource: value.settings?.includeSource !== false,
