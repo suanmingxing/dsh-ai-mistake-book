@@ -94,7 +94,7 @@ window.__ModuleLoader__.load({
       blockSystem: '④ 系统自动追加',
       blockSystemHint: '插件在任务书末尾自动追加的一段，只读；展开可查看原文与可用变量。',
       blockPdf: '⑤ PDF 导出模板',
-      blockPdfHint: '每道错题在导出 PDF 里的板块与顺序；勾选控制包含，↑↓ 调整顺序。预设板块与自定义板块在同一张列表里。',
+      blockPdfHint: '每道错题在导出 PDF 里的板块与顺序；勾选控制包含，↑↓ 调整顺序。预设板块与自定义板块在同一张列表里：预设板块可「编辑说明」（说明会写进分析提示词），自定义板块可编辑/删除。',
       readOnly: '只读',
       variables: '可用变量',
       variablesHint: '在模板里用 {{变量名}} 引用；未识别的占位符会原样保留。',
@@ -138,6 +138,12 @@ window.__ModuleLoader__.load({
       customTitleEmpty: '标题为空，保存前必须填写',
       customTitleEmptyNote: '有自定义模板缺少标题，填好标题后才能保存。',
       editTemplate: '编辑',
+      editDescription: '编辑说明',
+      descriptionLabel: '说明',
+      descriptionPlaceholder: '说明（会写进分析提示词）',
+      sectionTitleFixed: '板块标题（固定，不可修改）',
+      resetDescription: '恢复默认说明',
+      descriptionRestored: '已恢复默认说明（尚未保存）',
       optSource: '含原卷图片',
       optCrop: '原卷只保留题目所在高度',
       exportedNote: '已导出 {n} 张卡片（{p} 份卷子）。',
@@ -280,7 +286,7 @@ window.__ModuleLoader__.load({
       blockSystem: '4. Appended by the system',
       blockSystemHint: 'Appended to the end of the brief by the plugin; read-only. Expand to see the text and the available variables.',
       blockPdf: '5. PDF export template',
-      blockPdfHint: 'Sections and their order in the exported PDF; tick to include, ↑↓ to reorder. Preset and custom sections share one list.',
+      blockPdfHint: 'Sections and their order in the exported PDF; tick to include, ↑↓ to reorder. Preset and custom sections share one list: presets let you edit the description (written into the analysis prompt), custom sections can be edited or deleted.',
       readOnly: 'Read-only',
       variables: 'Available variables',
       variablesHint: 'Reference them in a template as {{name}}; unknown placeholders stay visible.',
@@ -324,6 +330,12 @@ window.__ModuleLoader__.load({
       customTitleEmpty: 'Title is empty — required before saving',
       customTitleEmptyNote: 'Some custom templates have no title; fill them in before saving.',
       editTemplate: 'Edit',
+      editDescription: 'Edit description',
+      descriptionLabel: 'Description',
+      descriptionPlaceholder: 'Description (written into the analysis prompt)',
+      sectionTitleFixed: 'Section title (fixed)',
+      resetDescription: 'Restore default description',
+      descriptionRestored: 'Default description restored (not saved yet)',
       optSource: 'Include the scan image',
       optCrop: 'Show only the question\'s height of the scan',
       exportedNote: 'Exported {n} card(s) from {p} paper(s).',
@@ -525,6 +537,24 @@ window.__ModuleLoader__.load({
         padding: '4px 0',
         borderTop: `1px solid ${token('--dsw-alias-border-l1')}`,
       },
+      /**
+       * PDF 模板统一列表的一行：结构与只读参数表同构，但**不画行分割线**。
+       * 左列占满剩余宽度（勾选 + 名称 + 行内按钮），右列 auto 只放 ↑↓——
+       * 所有行的 ↑↓ 因此落在同一列、右对齐。
+       */
+      listRow: {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0, 1fr) auto',
+        gap: '8px',
+        alignItems: 'center',
+        padding: '4px 0',
+      },
+      /** 行首：勾选 + 名称 +（自定义）编辑/删除；预设行是名称 + 编辑说明。 */
+      listRowMain: { display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 },
+      /** 右侧 ↑↓ 列：不参与左侧按钮排版，所以各行右边界一致。 */
+      listRowMove: { display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' },
+      /** 预设说明编辑器里的只读标题行。 */
+      editorTitleRow: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' },
       settingsKey: { fontSize: '12px', color: token('--dsw-alias-label-secondary') },
       settingsValue: { fontSize: '12px', color: token('--dsw-alias-label-primary'), wordBreak: 'break-word' },
       /** 统一列表行名称下的一行小字说明：只占一行，完整文本放在 title 里。 */
@@ -984,7 +1014,7 @@ window.__ModuleLoader__.load({
     /** 三份可编辑模板；顺序即模型接收顺序（background / taxonomy 嵌进 analysis）。 */
     const TEMPLATE_KEYS = ['analysis', 'background', 'errorTaxonomy']
     const EMPTY_TEMPLATES = { analysis: '', background: '', errorTaxonomy: '' }
-    const EMPTY_EXPORT_SETTINGS = { sections: {}, order: [], includeSource: true, cropToQuestion: true }
+    const EMPTY_EXPORT_SETTINGS = { sections: {}, order: [], descriptions: {}, includeSource: true, cropToQuestion: true }
 
     /** 设置选项卡片的分组；`kind` 决定取值怎么显示。 */
     const STATUS_GROUPS = [
@@ -1062,18 +1092,43 @@ window.__ModuleLoader__.load({
     const isCustomKey = (key) => typeof key === 'string' && key.startsWith(CUSTOM_KEY_PREFIX)
     const customIdOf = (key) => (isCustomKey(key) ? key.slice(CUSTOM_KEY_PREFIX.length) : null)
 
+    /**
+     * 六个预设板块的 key（顺序与后端 CARD_SECTIONS 一致）。只有预设板块的「说明」
+     * 存在 exportSettings.descriptions 里；自定义板块的说明在草稿条目上。
+     */
+    const PRESET_KEYS = ['stem', 'work', 'answer', 'knowledge', 'errorTypes', 'uncertain']
+
+    /** 预设板块说明的本地兜底：旧宿主没有 descriptions 时用字典文案，保证不崩。 */
+    function fallbackSectionDescription(t, key) {
+      const localeKey = SECTION_DESC_KEYS[key]
+      if (localeKey === undefined) return ''
+      const translated = t(localeKey)
+      return translated === localeKey ? '' : translated
+    }
+
     const asText = (value) => (typeof value === 'string' ? value : value === null || value === undefined ? '' : String(value))
 
     const cloneExportSettings = (settings) => ({
       sections: { ...(settings?.sections ?? {}) },
       order: [...(settings?.order ?? [])],
+      descriptions: { ...(settings?.descriptions ?? {}) },
       includeSource: settings?.includeSource !== false,
       cropToQuestion: settings?.cropToQuestion !== false,
     })
 
+    /**
+     * 预设板块说明的 dirty 判定：只比六个预设 key。缺省（旧宿主/未设置）与空串
+     * 不同——空串是用户主动清空，要能保存下去。
+     */
+    function samePresetDescriptions(left, right) {
+      const valueOf = (bag, key) => (bag !== null && typeof bag === 'object' && typeof bag[key] === 'string' ? bag[key] : null)
+      return PRESET_KEYS.every((key) => valueOf(left, key) === valueOf(right, key))
+    }
+
     function sameExportSettings(left, right) {
       if (left === null || right === null) return false
       if (left.includeSource !== right.includeSource || left.cropToQuestion !== right.cropToQuestion) return false
+      if (!samePresetDescriptions(left.descriptions, right.descriptions)) return false
       if (left.order.length !== right.order.length) return false
       // 顺序键逐项比较；自定义板块的勾选状态存在草稿条目里（由 sameCustomItems 负责），
       // 这里只看预设板块的 sections。
@@ -1158,6 +1213,7 @@ window.__ModuleLoader__.load({
      *   - 目录 = 服务端 sections，再补上草稿里的自定义板块（旧宿主 / 无 custom 时）；
      *   - order 只保留目录里的键、去重，缺失项按目录顺序补齐；
      *   - sections 只保留预设板块（自定义板块的开关存在草稿条目里）；
+     *   - descriptions 只保留预设 key→字符串，旧宿主没有该字段时留空，由渲染期回退；
      *   - 陈旧的 `tpl:` 键（模板已删除）会被过滤掉。
      */
     function normalizeExportPayload(value, customItems) {
@@ -1206,9 +1262,17 @@ window.__ModuleLoader__.load({
           const source = raw?.sections !== null && typeof raw?.sections === 'object' ? raw.sections : {}
           sections[entry.key] = source[entry.key] === undefined ? true : source[entry.key] !== false
         }
+        const descriptions = {}
+        const descriptionSource = raw?.descriptions
+        if (descriptionSource !== null && typeof descriptionSource === 'object') {
+          for (const key of PRESET_KEYS) {
+            if (typeof descriptionSource[key] === 'string') descriptions[key] = descriptionSource[key]
+          }
+        }
         return {
           sections,
           order,
+          descriptions,
           includeSource: raw?.includeSource !== false,
           cropToQuestion: raw?.cropToQuestion !== false,
         }
@@ -1318,6 +1382,8 @@ window.__ModuleLoader__.load({
           pdf: true,
           // 自定义板块行的行内编辑区：默认收起，新增条目时自动展开。
           customItems: {},
+          // 预设板块的「说明」编辑器：默认收起，点「编辑说明」展开。
+          presetDescriptions: {},
         },
       })
 
@@ -1402,8 +1468,9 @@ window.__ModuleLoader__.load({
        * PDF 模板「恢复默认」：用服务端下发的内置默认。
        *
        * 默认顺序 = 预设六板块 → 自定义板块（后端 defaults 已是这个形状）；旧宿主
-       * 没有 defaults 时按当前预设顺序 + 自定义草稿顺序兜底。只重置 PDF 设置，
-       * 自定义板块的「启用」属于模板本身，保留草稿里的选择。
+       * 没有 defaults 时按当前预设顺序 + 自定义草稿顺序兜底。板块说明回写
+       * defaults.descriptions（旧宿主没有该字段时清空草稿值，渲染期回退本地字典）。
+       * 只重置 PDF 设置，自定义板块的「启用」属于模板本身，保留草稿里的选择。
        */
       const resetExport = () => setState((current) => {
         const defaults = current.exportDefaults
@@ -1427,12 +1494,22 @@ window.__ModuleLoader__.load({
           const stored = defaults?.sections?.[key]
           sections[key] = stored === undefined ? true : stored !== false
         }
+        // 板块说明也回默认：只写服务端确实下发的字符串；没有就清空草稿值，
+        // 渲染期回退「目录说明 → 本地字典」，与旧宿主的行为一致。
+        const descriptions = {}
+        const storedDescriptions = defaults?.descriptions
+        if (storedDescriptions !== null && typeof storedDescriptions === 'object') {
+          for (const key of PRESET_KEYS) {
+            if (typeof storedDescriptions[key] === 'string') descriptions[key] = storedDescriptions[key]
+          }
+        }
         return {
           ...current,
           note: null,
           exportSettings: {
             sections,
             order,
+            descriptions,
             includeSource: defaults?.includeSource !== false,
             cropToQuestion: defaults?.cropToQuestion !== false,
           },
@@ -1514,6 +1591,49 @@ window.__ModuleLoader__.load({
       }))
 
       const isCustomOpen = (id) => state.open.customItems[id] === true
+
+      /** 预设板块的说明编辑区：默认收起，点「编辑说明」展开。 */
+      const togglePresetOpen = (key) => setState((current) => ({
+        ...current,
+        open: {
+          ...current.open,
+          presetDescriptions: {
+            ...current.open.presetDescriptions,
+            [key]: current.open.presetDescriptions[key] !== true,
+          },
+        },
+      }))
+
+      const isPresetOpen = (key) => state.open.presetDescriptions[key] === true
+
+      /** 修改预设板块说明：只改草稿，随「保存全部修改」提交（payload 带 descriptions）。 */
+      const editPresetDescription = (key, value) => setState((current) => ({
+        ...current,
+        note: null,
+        exportSettings: {
+          ...current.exportSettings,
+          descriptions: { ...current.exportSettings.descriptions, [key]: value },
+        },
+      }))
+
+      /**
+       * 「恢复默认说明」：草稿里写回服务端下发的 defaults.descriptions；旧宿主没有
+       * 该字段时删掉草稿值，渲染期回退「目录说明 → 本地字典」。
+       */
+      const resetPresetDescription = (key) => setState((current) => {
+        const stored = current.exportDefaults?.descriptions
+        const descriptions = { ...current.exportSettings.descriptions }
+        const value = stored !== null && typeof stored === 'object' && typeof stored[key] === 'string'
+          ? stored[key]
+          : undefined
+        if (value === undefined) delete descriptions[key]
+        else descriptions[key] = value
+        return {
+          ...current,
+          note: { kind: 'ok', text: t('descriptionRestored') },
+          exportSettings: { ...current.exportSettings, descriptions },
+        }
+      })
 
       /* —— 自定义板块草稿：增 / 改 / 删（全部只改草稿，随「保存全部修改」提交） —— */
 
@@ -1615,17 +1735,25 @@ window.__ModuleLoader__.load({
         return meta === undefined || asText(meta.label) === '' ? key : asText(meta.label)
       }
 
+      /** 草稿里的预设板块说明；没有该 key 时返回 undefined（区别于用户清空成的空串）。 */
+      const presetDescriptionDraft = (key) => {
+        const descriptions = state.exportSettings.descriptions
+        if (descriptions !== null && typeof descriptions === 'object'
+          && Object.prototype.hasOwnProperty.call(descriptions, key)
+          && typeof descriptions[key] === 'string') return descriptions[key]
+        return undefined
+      }
+
       /**
-       * 预设板块的一行说明：优先用服务端 CARD_SECTIONS 的 description（与旧版展示
-       * meta.description 的做法一致：说明是元信息，界面语言只做旧宿主的回退）。
+       * 预设板块的一行说明：优先用草稿里的 descriptions（刚改的也立刻可见），旧宿主
+       * 没有 descriptions 时回退目录说明（CARD_SECTIONS）/ 本地字典文案。
        */
-      const sectionDescription = (key, meta) => {
-        const server = asText(meta?.description)
+      const sectionDescription = (key) => {
+        const drafted = presetDescriptionDraft(key)
+        if (drafted !== undefined) return drafted
+        const server = asText(metaByKey.get(key)?.description)
         if (server !== '') return server
-        const localeKey = SECTION_DESC_KEYS[key]
-        if (localeKey === undefined) return ''
-        const translated = t(localeKey)
-        return translated === localeKey ? '' : translated
+        return fallbackSectionDescription(t, key)
       }
 
       /** 统一列表的 ↑↓：预设与自定义板块在同一张 order 里一起排。 */
@@ -1646,30 +1774,57 @@ window.__ModuleLoader__.load({
         }, '↓'),
       ]
 
-      /** 预设板块行：勾选 → sections[key]；名称下一行小字是 CARD_SECTIONS 的说明。 */
+      /**
+       * 预设板块行：勾选 → sections[key]；左侧「编辑说明」在行内展开说明编辑器
+       * （板块标题只读——它映射卡片里的固定字段，不能改名）。右列只放 ↑↓。
+       */
       const presetRow = (key, index) => {
-        const meta = metaByKey.get(key)
-        const description = sectionDescription(key, meta)
-        return h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+        const editing = isPresetOpen(key)
+        const description = sectionDescription(key)
+        return h('div', { key, style: styles.listRow },
           h('div', { style: { minWidth: '0' } },
-            h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
-              h('input', {
-                type: 'checkbox',
-                checked: state.exportSettings.sections[key] !== false,
-                onChange: () => toggleExportRow(key),
-              }),
+            h('div', { style: styles.listRowMain },
+              h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+                h('input', {
+                  type: 'checkbox',
+                  checked: state.exportSettings.sections[key] !== false,
+                  onChange: () => toggleExportRow(key),
+                }),
+                h('span', { style: styles.settingsValue }, sectionLabel(key)),
+              ),
+              h('button', {
+                style: styles.button,
+                title: t('editDescription'),
+                onClick: () => togglePresetOpen(key),
+              }, editing ? t('collapse') : t('editDescription')),
+            ),
+            description === '' || editing ? null : h('div', { style: styles.rowDesc, title: description }, description),
+          ),
+          h('div', { style: styles.listRowMove },
+            rowMoveButtons(key, index, state.exportSettings.order.length)),
+          editing ? h('div', { style: styles.rowEditor },
+            h('div', { style: styles.editorTitleRow },
+              h('span', { style: styles.small }, t('sectionTitleFixed')),
               h('span', { style: styles.settingsValue }, sectionLabel(key)),
             ),
-            description === '' ? null : h('div', { style: styles.rowDesc, title: description }, description),
-          ),
-          h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
-            rowMoveButtons(key, index, state.exportSettings.order.length)),
+            h('div', { style: styles.small }, t('descriptionLabel')),
+            h('textarea', {
+              style: { ...styles.textarea, minHeight: '64px' },
+              placeholder: t('descriptionPlaceholder'),
+              value: presetDescriptionDraft(key) ?? sectionDescription(key),
+              onChange: (event) => editPresetDescription(key, event.target.value),
+            }),
+            h('div', { style: styles.wrap },
+              h('button', { style: styles.button, onClick: () => resetPresetDescription(key) }, t('resetDescription')),
+            ),
+          ) : null,
         )
       }
 
       /**
-       * 自定义板块行：勾选 → 草稿条目的 enabled；「编辑」在行内展开标题与说明输入，
-       * 「删除」同时从草稿和 order 的 `tpl:<id>` 键里移除。两者都只改草稿。
+       * 自定义板块行：勾选 → 草稿条目的 enabled；「编辑」「删除」紧跟在名称后面
+       * （都在左列），右列只留 ↑↓，这样与预设行的 ↑↓ 对齐。「编辑」在行内展开标题
+       * 与说明输入，「删除」同时从草稿和 order 的 `tpl:<id>` 键里移除；两者都只改草稿。
        * 草稿里找不到条目（脏数据）时退化成只读一行，页面不崩。
        */
       const customRow = (key, index) => {
@@ -1677,36 +1832,37 @@ window.__ModuleLoader__.load({
         const item = draftCustomById.get(id)
         if (item === undefined) {
           const meta = metaByKey.get(key)
-          return h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+          return h('div', { key, style: styles.listRow },
             h('div', { style: styles.settingsValue }, asText(meta?.label ?? id)),
-            h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
+            h('div', { style: styles.listRowMove },
               rowMoveButtons(key, index, state.exportSettings.order.length)),
           )
         }
         const editing = isCustomOpen(item.id)
         const untitled = item.title.trim() === ''
-        return h('div', { key, style: { ...styles.settingsRow, alignItems: 'center' } },
+        return h('div', { key, style: styles.listRow },
           h('div', { style: { minWidth: '0' } },
-            h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
-              h('input', {
-                type: 'checkbox',
-                checked: item.enabled,
-                title: t('customEnabled'),
-                onChange: () => toggleExportRow(key),
-              }),
-              h('span', {
-                style: { ...styles.settingsValue, ...(untitled ? styles.warn : {}) },
-                title: item.description === '' ? undefined : item.description,
-              }, untitled ? t('customUntitled') : item.title),
+            h('div', { style: styles.listRowMain },
+              h('label', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+                h('input', {
+                  type: 'checkbox',
+                  checked: item.enabled,
+                  title: t('customEnabled'),
+                  onChange: () => toggleExportRow(key),
+                }),
+                h('span', {
+                  style: { ...styles.settingsValue, ...(untitled ? styles.warn : {}) },
+                  title: item.description === '' ? undefined : item.description,
+                }, untitled ? t('customUntitled') : item.title),
+              ),
+              h('button', { style: styles.button, onClick: () => toggleCustomOpen(item.id) },
+                editing ? t('collapse') : t('editTemplate')),
+              h('button', { style: { ...styles.button, ...styles.danger }, onClick: () => removeCustomTemplate(item.id) }, t('deleteTemplate')),
             ),
-            untitled ? h('div', { style: { ...styles.small, ...styles.warn, marginLeft: '20px' } }, t('customTitleEmpty')) : null,
+            untitled ? h('div', { style: { ...styles.small, ...styles.warn, marginTop: '2px', marginLeft: '20px' } }, t('customTitleEmpty')) : null,
           ),
-          h('div', { style: { ...styles.wrap, justifyContent: 'flex-end' } },
-            rowMoveButtons(key, index, state.exportSettings.order.length),
-            h('button', { style: styles.button, onClick: () => toggleCustomOpen(item.id) },
-              editing ? t('collapse') : t('editTemplate')),
-            h('button', { style: { ...styles.button, ...styles.danger }, onClick: () => removeCustomTemplate(item.id) }, t('deleteTemplate')),
-          ),
+          h('div', { style: styles.listRowMove },
+            rowMoveButtons(key, index, state.exportSettings.order.length)),
           editing ? h('div', { style: styles.rowEditor },
             h('input', {
               style: styles.input,

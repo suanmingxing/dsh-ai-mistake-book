@@ -97,9 +97,9 @@ dsh plugin --profile desktop add "link:D:/tools/dsh-ai-mistake-book"
   3. **错因分类**（`templates/error-taxonomy.md`）——替换进「四、错因分类」
   4. **系统自动追加**（只读折叠）——每批次固定追加的工具调用速记，不可编辑
   5. **PDF 导出模板**——**统一列表**：六个预设板块 + 你自己的自定义板块（`tpl:<id>`）混排，全部可勾选、↑↓ 排序；列表最下方可「新增模板」。
-     - 每条自定义板块只有标题 + 说明；**说明会写进分析提示词**，模型按说明为每道错题产出该板块的内容，卡片里生成 `## 板块标题` 段落，导出 PDF 时按模板顺序显示。
+     - 每条板块（预设和自定义）都有自己的「说明」；预设板块点行内「编辑说明」可改（标题固定，说明可改），自定义板块可改标题+说明。**说明会写进分析提示词**，模型据此为每道错题产出板块内容；卡片里生成 `## 板块标题` 段落，导出 PDF 时按模板顺序显示。
      - 删除/停用自定义板块后，导出会跳过它；停用的板块不会被当成"未登记标题"重新塞回 PDF 末尾。
-  6. 旧版本的 `templates/custom.json` 会在首次加载时自动并入分析任务书、原文件改名为 `custom.json.migrated`；新的自定义板块存在 `templates/custom-templates.json`（`{id,title,description,enabled}`，顺序记在 `export-settings.json` 的 `order` 里）。
+  6. 旧版本的 `templates/custom.json` 会在首次加载时自动并入分析任务书、原文件改名为 `custom.json.migrated`；新的自定义板块存在 `templates/custom-templates.json`（`{id,title,description,enabled}`，顺序和预设说明记在 `export-settings.json` 的 `order` / `descriptions` 里）。
 
 不会自动保存：改完点「保存全部修改」；每块的「恢复默认」只改草稿，仍需保存。PDF 导出时「管理」页还可以对这一次导出做临时覆盖。
 
